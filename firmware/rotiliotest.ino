@@ -14,7 +14,7 @@
 
 */
 
-#define INDIRIZZO_Si7020	0x40
+#define INDIRIZZO_Si7020    0x40
 #define NUMERO_LETTURE      5
 
 #define PULSANTE_1          D2
@@ -28,9 +28,15 @@
 #define PREMUTO             LOW
 #define NON_PREMUTO         HIGH
 
+
+#define tempDeltaEvent      0.1
+#define humiDeltaEvent      1
+#define photoDeltaEvent     200
+#define trimmerDeltaEvent   100
+
 double temperature = 99999 ; 
-double umidity = 9999 ;
-int photores = -1 ;
+double humidity = 9999 ;
+int photoresistor = -1 ;
 int trimmer = -1 ;
 int button1 = false ;
 int button2 = false ;
@@ -49,8 +55,8 @@ void setup()
 {
     
     Particle.variable("temperature", temperature);
-    Particle.variable("umidity", umidity);
-    Particle.variable("photores", photores);
+    Particle.variable("humidity", humidity);
+    Particle.variable("photoresistor", photoresistor);
     Particle.variable("trimmer", trimmer);
     Particle.variable("switch", switch0) ;
     Particle.variable("relais", relais) ;
@@ -58,9 +64,10 @@ void setup()
     Particle.variable("button2", button2) ;
     Particle.variable("alarm", alarm) ;
     
-    Particle.function("setrelais", setrelais);
+    Particle.function("setrelais", setrelais); // accepts "on" to switch on the relais 
+    Particle.function("setalarm", setalarm); // accept a nummber of beeps to emit (one per second)
+    Particle.function("relaispulse", relaispulse); // accept a number of milliseconds for releais on
     
-    Particle.function("setalarm", setalarm);
     
     pinMode(BUZZER, OUTPUT);  
     pinMode(RELAIS_SET, OUTPUT);  
@@ -87,25 +94,43 @@ void loop()
         alarm-- ;
     }
     
-    temperature = temperatura() ;
-    umidity = umidita() ;
+    double lastTemp = temperature ;
+    temperature = temperatureRead() ;
+    if (abs(lastTemp - temperature) > tempDeltaEvent) Particle.publish("temperature", String(temperature), 60, PRIVATE);
     
-    photores = analogRead(A1) ;
+    double lastHumi = humidity ;
+    humidity = humidityRead() ;
+    if (abs(lastHumi - humidity) > humiDeltaEvent) Particle.publish("humidity", String(humidity), 60, PRIVATE);
+    
+    int lastPhotoRes = photoresistor ;
+    photoresistor = analogRead(A1) ;
+    if (abs(lastPhotoRes - photoresistor) > photoDeltaEvent) Particle.publish("photoresistor", String(photoresistor), 60, PRIVATE);
+    
+    int lastTrimmer = trimmer ;
     trimmer = analogRead(A2) ;
+    if (abs(lastTrimmer - trimmer) > trimmerDeltaEvent) Particle.publish("trimmer", String(trimmer), 60, PRIVATE);
     
+    int lastSwitch = switch0 ;
     switch0 = digitalRead(SWITCH) == HIGH ;
+    if (lastSwitch != switch0) Particle.publish("switch", switch0 ? "true" : "false", 60, PRIVATE);
+    
+    int lastRelais = relais ;
     relais = digitalRead(RELAIS_FDB) == HIGH ;
+    if (lastRelais != relais) Particle.publish("relais", relais ? "true" : "false", 60, PRIVATE);
+    
 
     if(digitalRead(SWITCH)==LOW) sound(500,340) ;
     
     if (digitalRead(PULSANTE_1)==LOW){
         sound(1000,170) ;
         button1 = !button1 ;
+        Particle.publish("button1", button1 ? "true" : "false", 60, PRIVATE);
     }
     
     if (digitalRead(PULSANTE_2)==LOW){
         sound(1000,170) ;
         button2 = !button2 ;
+        Particle.publish("button2", button2 ? "true" : "false", 60, PRIVATE);
     }
 
 /*
@@ -134,8 +159,7 @@ void sound(int cicles,int period){ // emette il suono ..
     }
 }
 
-float temperatura(void)
-{
+double temperatureRead(void){
     int accumulo=0;
     for(byte n=0;n<NUMERO_LETTURE;n++)
         {
@@ -151,11 +175,11 @@ float temperatura(void)
             int sot=(((int) msb<<8) + (int) lsb);       // crea variabile "raw data"
             accumulo=accumulo+sot;                      // la accumula per poi farne la media
         }
-    return ((175.72*(accumulo/NUMERO_LETTURE))/65536)-46.85;   // calcola la media e converte la lettura grezza in temperatura (gradi centigradi) 
+    double res = ((175.72*(accumulo/NUMERO_LETTURE))/65536)-46.85;   // calcola la media e converte la lettura grezza in temperatura (gradi centigradi)
+    return round(res*10)/10 ;
 }
 
-float umidita(void)
-{
+double humidityRead(void){
     int accumulo=0;
     for(byte n=0;n<NUMERO_LETTURE;n++)
         {
@@ -177,15 +201,27 @@ float umidita(void)
 
 int setalarm(String command){
     alarm = command.toInt();
+    if (alarm > 0) {
+        sound(1000,250);
+        alarm-- ;
+    }
+    return command.toInt() ;
 }
 
-int setrelais(String command)
-{
-  if (command == "on")  {
+int setrelais(String command){
+    int cmd = LOW ;
+    if (command == "on")  {
+        cmd = HIGH ;
+    } 
+    digitalWrite(RELAIS_SET, cmd);
+    return cmd ;
+}
+
+int relaispulse(String command){
+    int duration = command.toInt() ;
     digitalWrite(RELAIS_SET, HIGH);
-  } else {
+    delay(duration) ;
     digitalWrite(RELAIS_SET, LOW);
-  }
-  return 1 ;
+    return duration ;
 }
 
