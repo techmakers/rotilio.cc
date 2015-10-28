@@ -1,28 +1,49 @@
 <div _style="display:inline" id="spark-login" ></div>
-
+<br/>
+<br/>
 <div>
-    <label>Search: <input ng-model="searchText"></label>
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label for="searchText" class="col-md-1 control-label">Filter:</label>
+            <div class="col-md-3">
+                <input name="searchText" type="text" class="form-control" ng-model="searchText" placeholder="">
+            </div>
+        </div>
+    </form>
 </div>
 
 <div ng-repeat="device in devices | filter:filterDevices">
     <h3>{{device.name}} <span ng-show="device.updatingVariables">(Reading)</span> <span ng-show="device.timeout">(Timeout)</span></h3>
-    <div>
-        <h4>Variables</h4>
-        <div ng-repeat="(key,value) in device.variables">
-            {{key}} = {{device.variableValues[key]}}
+    <div>Last update: {{device.lastUpdate}}</div>
+    <div class="container">
+        <div>
+            <h4>Variables</h4>
+            <div ng-repeat="(key,value) in device.variables">
+                {{key}} = {{device.variableValues[key]}}
+            </div>
+        </div>
+        <div>
+            <h4>Functions</h4>
+            <div ng-repeat="func in device.functions">
+                <form class="form-horizontal">
+                    <div class="form-group row">
+                        <label class="col-md-1 control-label">{{func}}:</label>
+                        <div class="col-md-3">
+                            <input class="form-control" type="text" ng-model="device.functionCalls[func]">
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn" ng-click="callFunction(device,func)">Call</button>
+                        </div>
+                        <div class="col-md-7">Last response: <span>{{device.functionResponses[func]}}</span></div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-    <div>
-        <h4>Functions</h4>
-        <div ng-repeat="func in device.functions">
-            {{func}} : <input type="text" ng-model="device.functionCalls[func]">
-            <button ng-click="callFunction(device,func)">Call</button>
-            Last response: <span>{{device.functionResponses[func]}}</span>
-        </div>
-    </div>
-   <!--
-    <div>
-        <input type="checkbox" ng-model="device.sendSignalCommand" ng-change="sendSignalToDevice(device)" />
-    </div>
-    -->
+
+    <!--
+     <div>
+         <input type="checkbox" ng-model="device.sendSignalCommand" ng-change="sendSignalToDevice(device)" />
+     </div>
+     -->
 </div>

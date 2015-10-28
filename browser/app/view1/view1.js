@@ -9,13 +9,30 @@ angular.module('myApp.view1', ['ngRoute'])
   });
 }])
 
-.controller('View1Ctrl', ['$scope','$timeout','$interval',function($scope,$timeout,$interval) {
+.controller('View1Ctrl', ['$scope','$timeout','$interval','$location',function($scope,$timeout,$interval,$location) {
 
-        sparkLogin(function(data) { // loggin in
-            console.log(data) ;
-            listAllDevices();
-        });
-
+        var savedState = $location.search();
+        $scope.access_token = savedState.access_token ;
+        if (!$scope.access_token){
+            sparkLogin(function(data) { // loggin in
+                console.log(data) ;
+                $scope.access_token = data.access_token ;
+                $location.search("access_token", data.access_token);
+                listAllDevices();
+            });
+        } else {
+            spark.login({accessToken:$scope.access_token},function(err){
+                if (err) {
+                    sparkLogin(function(data) { // loggin in
+                        console.log(data) ;
+                        $scope.access_token = data.access_token ;
+                        $location.search("access_token", data.access_token);
+                        listAllDevices();
+                    });
+                }
+                listAllDevices();
+            }) ;
+        }
 
         function prepareDeviceForUpdate(device) {
             device.timeout = false ;
@@ -54,7 +71,10 @@ angular.module('myApp.view1', ['ngRoute'])
                             $timeout(function () { // needed to force AngularJS to update the view
                                 device.variableValues[data.name] = data.result;
                                 device.updatedVars++ ;
-                                if (device.updatedVars === device.variableCount) device.updatingVariables = false ; // if all variables responded we clear the device.updating flag
+                                if (device.updatedVars === device.variableCount) {
+                                    device.updatingVariables = false ;
+                                    device.lastUpdate = new Date() ;
+                                } // if all variables responded we clear the device.updating flag
                             }, 0);
                         }
                     });
@@ -81,14 +101,6 @@ angular.module('myApp.view1', ['ngRoute'])
                 updateDeviceVariables(device) ;
             }) ;
         }
-        
-        listAllDevices() ;
-        /*
-        $interval(function(){
-            listAllDevices() ;
-        },20000);
-        */
-
 
         $interval(function(){
             updateAllDevices();
