@@ -1,5 +1,16 @@
-<p>This is the partial for view 2.</p>
-<p>
-  Showing of 'interpolate' filter:
-  {{ 'Current version is v%VERSION%.' | interpolate }}
-</p>
+<div _style="display:inline" id="spark-login" ></div>
+<br/>
+<div>
+  <form class="form-horizontal">
+    <div class="form-group">
+      <label for="searchText" style="text-align:left" class="col-md-1 control-label">Filter:</label>
+      <div class="col-md-3">
+        <input name="searchText" type="text" class="form-control" ng-model="searchText" placeholder="">
+      </div>
+    </div>
+  </form>
+</div>
+
+<div ng-repeat="device in devices | filter:filterDevices">
+  <h3>{{device.name}} - <a href="./#/device?access_token={{access_token}}&deviceid={{device.id}}">view</a>  </h3>
+</div>
