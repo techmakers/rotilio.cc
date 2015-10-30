@@ -9,12 +9,19 @@ angular.module('myApp.device', ['ngRoute'])
   });
 }])
 
-.controller('DeviceCtrl', ['$scope','$timeout','$interval','$location','$anchorScroll',
-        function($scope,$timeout,$interval,$location,$anchorScroll) {
+.controller('DeviceCtrl', ['$scope','$timeout','$interval','$location','$anchorScroll','$rootScope',
+        function($scope,$timeout,$interval,$location,$rootScope) {
 
 
             var savedState = $location.search();
             $scope.access_token = savedState.access_token ;
+
+            if (!$scope.access_token) {
+                $location.path("/") ;
+                return ;
+            }
+
+            $rootScope.access_token = $scope.access_token ;
 
             $scope.devices = [] ;
 
@@ -22,7 +29,8 @@ angular.module('myApp.device', ['ngRoute'])
                 admittedDevices : [savedState.deviceid],
                 deviceAdded: function(device){
                     $timeout(function(){
-                       $scope.devices.push(device) ;
+                        $scope.devices.push(device) ;
+                        $scope.subscribeToEvents(device) ;
                     },0)
                 },
                 variableChanged :function(data){
@@ -74,7 +82,7 @@ angular.module('myApp.device', ['ngRoute'])
                 device.eventlog = [] ;
                 spark.getEventStream(false, device.id, function(data) {
                     console.log("Event ", data);
-                    if (device.eventlog.length >= 10) device.eventlog.splice(0,1) ;
+                    if (device.eventlog.length >= 10) device.eventlog.splice(device.eventlog.length-1,1) ;
                     $timeout(function(){
                         device.eventlog.splice(0, 0, data);
                     },0) ;

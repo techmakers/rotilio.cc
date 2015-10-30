@@ -1,16 +1,28 @@
 'use strict';
 
-angular.module('myApp.view2', ['ngRoute'])
+angular.module('myApp.home', ['ngRoute'])
 
 .config(['$routeProvider', function($routeProvider) {
-  $routeProvider.when('/view2', {
-    templateUrl: 'view2/view2.html',
-    controller: 'View2Ctrl'
+  $routeProvider.when('/home', {
+    templateUrl: 'home/home.html',
+    controller: 'HomeCtrl'
   });
 }])
 
-    .controller('View2Ctrl', ['$scope','$timeout','$interval','$location','$anchorScroll',
-      function($scope,$timeout,$interval,$location,$anchorScroll) {
+    .controller('HomeCtrl', ['$scope','$timeout','$interval','$location','$rootScope',
+      function($scope,$timeout,$interval,$location,$rootScope) {
+
+        function showLogin(){
+          if ($rootScope.showedLogin) return ;
+          $rootScope.showedLogin = true ;
+          sparkLogin(function(data) { // loggin in
+            console.log(data) ;
+            $scope.access_token = data.access_token ;
+            $rootScope.access_token = data.access_token ;
+            $location.search("access_token", data.access_token);
+            rotilio.listDevices();
+          });
+        }
 
         $scope.devices = [] ;
         var rotilio = new rotiliocc({
@@ -24,23 +36,14 @@ angular.module('myApp.view2', ['ngRoute'])
 
         var savedState = $location.search();
         $scope.access_token = savedState.access_token ;
+        $rootScope.access_token = $scope.access_token ;
 
         if (!$scope.access_token){
-          sparkLogin(function(data) { // loggin in
-            console.log(data) ;
-            $scope.access_token = data.access_token ;
-            $location.search("access_token", data.access_token);
-            rotilio.listDevices();
-          });
+          showLogin() ;
         } else {
           spark.login({accessToken:$scope.access_token},function(err){
             if (err) {
-              sparkLogin(function(data) { // loggin in
-                console.log(data) ;
-                $scope.access_token = data.access_token ;
-                $location.search("access_token", data.access_token);
-                rotilio.listDevices();
-              });
+              showLogin();
             }
             rotilio.listDevices();
           }) ;

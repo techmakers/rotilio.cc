@@ -1,17 +1,4 @@
-<div _style="display:inline" id="spark-login" ></div>
-<br/>
-<div>
-    <form class="form-horizontal">
-        <div class="form-group">
-            <label for="searchText" style="text-align:left" class="col-md-1 control-label">Filter:</label>
-            <div class="col-md-3">
-                <input name="searchText" type="text" class="form-control" ng-model="searchText" placeholder="">
-            </div>
-        </div>
-    </form>
-</div>
-
-<div ng-repeat="device in devices | filter:filterDevices">
+<div ng-repeat="device in devices">
     <h3>{{device.name}} <span ng-show="device.updatingVariables">(Reading)</span> <span ng-show="device.timeout">(Timeout)</span></h3>
     <div>Last update: {{device.lastUpdate}}</div>
     <div class="row">
@@ -42,7 +29,7 @@
         </div>
     </div>
     <div>
-        <h4>Events <button class="btn" ng-click="subscribeToEvents(device)">Subscribe</button> </h4>
+        <h4>Events</h4>
 
         <div ng-repeat="event in device.eventlog">
             <pre>{{event}}</pre>
