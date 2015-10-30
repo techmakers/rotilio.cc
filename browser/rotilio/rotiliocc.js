@@ -63,26 +63,35 @@ function rotiliocc(options){
         }
     }
 
-    this.listDevices = function(){
+    this.listDevices = function(cb){
 
         // example: ["rotilio0001","deopiipeoioei"] will list 2 devices,
         //          null : will list all devices
 
         self.devices = [] ; // initializing array for devices (you can manage more than one device with one account)
         spark.listDevices(function(err, devices) {
-            if (err) return console.log(err) ;
+            if (err) return cb(err);
+            var totDevices = devices.length ;
+            var fetchedDevices = 0 ;
+            setTimeout(function(){
+                if (totDevices > fetchedDevices) return cb(new Error("Rotiliocc: timeout fetching all devices.")) ;
+            },30000)
             devices.forEach(function(deviceDescriptor){
                 var found = !self.options.admittedDevices ||
                     self.options.admittedDevices.indexOf(deviceDescriptor.id) > -1 ||
                     self.options.admittedDevices.indexOf(deviceDescriptor.name) > -1 ;
-                if (!found) return ;
+                if (!found){
+                    fetchedDevices++ ;
+                    return ;
+                }
                 spark.getDevice(deviceDescriptor.id, function(err, device) {
                     if (err) return alert(err) ;
+                    fetchedDevices++ ;
                     self.devices.push(device) ;
                     self.options.deviceAdded(device) ;
+                    if (fetchedDevices === totDevices) return cb() ;
                 });
-            })
-
+            }) ;
         });
     }
 

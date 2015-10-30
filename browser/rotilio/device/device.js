@@ -9,8 +9,8 @@ angular.module('myApp.device', ['ngRoute'])
   });
 }])
 
-.controller('DeviceCtrl', ['$scope','$timeout','$interval','$location','$anchorScroll','$rootScope',
-        function($scope,$timeout,$interval,$location,$rootScope) {
+.controller('DeviceCtrl', ['$scope','$timeout','$interval','$location','$rootScope','utils',
+        function($scope,$timeout,$interval,$location,$rootScope,utils) {
 
 
             var savedState = $location.search();
@@ -40,28 +40,21 @@ angular.module('myApp.device', ['ngRoute'])
                 }
             }) ;
 
+            utils.ajaxindicatorstart("Fetching device infos from Particle cloud...") ;
+            spark.login({accessToken:$scope.access_token},function(err){
+                if (err) {
+                    utils.ajaxindicatorstop() ;
+                    console.log(err) ;
+                    alert(err) ;
+                    return ;
+                }
 
-
-            if (!$scope.access_token){
-                sparkLogin(function(data) { // loggin in
-                    console.log(data) ;
-                    $scope.access_token = data.access_token ;
-                    $location.search("access_token", data.access_token);
-                    rotilio.listDevices();
+                rotilio.listDevices(function(err){
+                    if (err) console.log(err) ;
+                    utils.ajaxindicatorstop() ;
                 });
-            } else {
-                spark.login({accessToken:$scope.access_token},function(err){
-                    if (err) {
-                        sparkLogin(function(data) { // loggin in
-                            console.log(data) ;
-                            $scope.access_token = data.access_token ;
-                            $location.search("access_token", data.access_token);
-                            rotilio.listDevices();
-                        });
-                    }
-                    rotilio.listDevices();
-                }) ;
-            }
+
+            }) ;
 
             $scope.callFunction = function(device,funcName){
                 if (!device.functionResponses) device.functionResponses = {} ;

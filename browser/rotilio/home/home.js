@@ -9,18 +9,23 @@ angular.module('myApp.home', ['ngRoute'])
   });
 }])
 
-    .controller('HomeCtrl', ['$scope','$timeout','$interval','$location','$rootScope',
-      function($scope,$timeout,$interval,$location,$rootScope) {
+    .controller('HomeCtrl', ['$scope','$timeout','$interval','$location','$rootScope','utils',
+      function($scope,$timeout,$interval,$location,$rootScope,utils) {
 
         function showLogin(){
           if ($rootScope.showedLogin) return ;
           $rootScope.showedLogin = true ;
+
           sparkLogin(function(data) { // loggin in
             console.log(data) ;
             $scope.access_token = data.access_token ;
             $rootScope.access_token = data.access_token ;
             $location.search("access_token", data.access_token);
-            rotilio.listDevices();
+            utils.ajaxindicatorstart("Fetching your devices from Particle cloud...") ;
+            rotilio.listDevices(function(err){
+              if (err) console.log(err) ;
+              utils.ajaxindicatorstop() ;
+            });
           });
         }
 
@@ -45,7 +50,11 @@ angular.module('myApp.home', ['ngRoute'])
             if (err) {
               showLogin();
             }
-            rotilio.listDevices();
+            utils.ajaxindicatorstart("Fetching your devices from Particle cloud...") ;
+            rotilio.listDevices(function(err){
+              if (err) console.log(err) ;
+              utils.ajaxindicatorstop() ;
+            });
           }) ;
         }
 
