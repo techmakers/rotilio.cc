@@ -56,7 +56,7 @@ void setup()
     
     Particle.variable("temperature", temperature);
     Particle.variable("humidity", humidity);
-    Particle.variable("photoresistor", photoresistor);
+    Particle.variable("photoresist", photoresistor);
     Particle.variable("trimmer", trimmer);
     Particle.variable("switch", switch0) ;
     Particle.variable("relais", relais) ;
@@ -104,7 +104,7 @@ void loop()
     
     int lastPhotoRes = photoresistor ;
     photoresistor = analogRead(A1) ;
-    if (abs(lastPhotoRes - photoresistor) > photoDeltaEvent) Particle.publish("photoresistor", String(photoresistor), 60, PRIVATE);
+    if (abs(lastPhotoRes - photoresistor) > photoDeltaEvent) Particle.publish("photoresist", String(photoresistor), 60, PRIVATE);
     
     int lastTrimmer = trimmer ;
     trimmer = analogRead(A2) ;
@@ -224,4 +224,3 @@ int relaispulse(String command){
     digitalWrite(RELAIS_SET, LOW);
     return duration ;
 }
-
