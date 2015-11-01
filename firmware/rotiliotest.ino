@@ -84,14 +84,14 @@ B = P2              es: B=0     = setpoint button2 == false
 
 String timeRanges[ARRAYSIZE] = { 
     //"00:00-23:59|MTWTFSS|JFMAMJJASOND", // alwais on, alwais off is : 00:00-00:00|mtwtfss|jfmamjjasond
-    "0:06:00-07:30|MTWTFss|JFmamjjasOND|T=22", // working days morning
-    "1:07:31-12:59|MTWTFss|JFmamjjasOND|T=20",
-    "2:13:00-14:00|MTWTFSS|JFmamjjasOND|T=22", // lunch time every day
-    "3:14:01-18:59|MTWTFSS|JFmamjjasOND|T=20",
-    "4:19:00-22:00|MTWTFSS|JFmamjjasOND|T=22", // dinner time every day
-    "5:22:00-05:59|MTWTFss|JFmamjjasOND|T=20", // sleeping time working days
-    "6:00:00-08:59|mtwtfSS|JFmamjjasOND|T=28", // sleeping time weekend
-    "7:09:00-10:00|mtwtfSS|JFmamjjasOND|T=28", // weekend morning
+    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=22", // working days morning
+    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=20",
+    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=22", // lunch time every day
+    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=20",
+    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=22", // dinner time every day
+    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=20", // sleeping time working days
+    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=20", // sleeping time weekend
+    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=22", // weekend morning
 };
 
 bool isInTimeRange(unsigned long now, String tRange){
