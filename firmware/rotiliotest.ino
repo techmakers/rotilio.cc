@@ -41,6 +41,7 @@ int switch0 = false ;
 int relais = false ;
 int alarm = 0 ;
 int actualTimeRangeIndex = -1 ;
+int actualExpireDateIndex = -1 ;
 
 
 // storage for last published values 
@@ -50,20 +51,12 @@ double lastPressure = -99999 ;
 int lastPhotoRes = -999999 ;
 int lastTrimmer = -999999 ;
 int lastTimeRangeIndex = -1 ;
+int lastExpireDateIndex = -1 ;
 
 // counter for debug function
 int l=0;
 int i=0;
 
-/*
-
-T = temp
-H = humi
-B = baro
-var inputConditions  = "Th" ;  // Temperature above setpoint
-var actual = "ThHhBh" ;  // T,H,B all above (h)
-var relais = setup in actual ;
-*/
 int timeZone = 1 ;
 
 /*
@@ -93,6 +86,79 @@ String timeRanges[ARRAYSIZE] = {
     "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=20", // sleeping time weekend
     "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=22", // weekend morning
 };
+
+String expireDates[ARRAYSIZE] = {
+    "0:2015-06-30|08:00:00|2015-07-30|16:00:00|T=22", // set temperature setpoint to 22°C from 30 June 2015 8 o'clock untile 30 July 16 o'clock
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+};
+
+int daysInMonthOfYear(int month, int year){
+    int months[12] = {
+        31,
+        28,
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31
+    }
+    bool isLeapYear = (year/4) != trunc(year/4) ; 
+    if (month == 2 && isLeapYear) return 29 ;
+    return months[month] ;
+}
+
+long unsigned millisAtDate(String atDate){
+
+    // 2015-06-30|08:00:00
+    // 0123456789012345678
+    //           1       
+
+    int millisInSecond = 1000 ;
+    int millisInMinute = 60 * millisInSecond ;
+    int millisInHour = 60 * millisInMinute ;
+    int millisInDay = 24 * millisInHour ;
+
+    int year = atDate.substring(0,4).toInt();
+    int month = atDate.substring(5,7).toInt();
+    int day = atDate.substring(8,10).toInt();
+    int hour = atDate.substring(11,13).toInt();
+    int minute = atDate.substring(14,16).toInt();
+    int second = atDate.substring(17,19).toInt();
+
+    bool isLeapYear = (year/4) != trunc(year/4) ; 
+
+    long unsigned int totDays = ((year - 1) * 365 + isLeapYear ? 1 : 0) + daysInMonthOfYear(month-1,year) + day - 1 ;
+    long unsigned int millisAt = totDays * millisInDay + hour * millisInHour + minute * millisInMinute + second * millisInSecond ;
+
+    return millisAt ;
+}
+
+bool isInExpireDate(unsigned long now, String eDate){
+    /*
+        eDate example: "0:2015-06-30|08:00:00|2015-07-30|16:00:00|T=22"
+                        01234567890123456789012345678901234567890123456
+                                  1         2         3         4
+    */
+    // calculating milliseconds from
+    long unsigned millisFrom = millisAtDate(eDate.substring(2,21)) ;
+    long unsigned millisTo = millisAtDate(eDate.substring(22,41)) ;
+
+    bool yesItIs = (millisFrom <= now) && (now <= millisTo) ;
+
+    return yesItIs ;
+
+}
 
 bool isInTimeRange(unsigned long now, String tRange){
     
@@ -166,12 +232,41 @@ int getTimeRangeForNow(){
     return res ;
 }
 
+int getExpireDateForNow(){
+    unsigned long now = Time.now() ;
+    int res = -1 ;
+    for (int ii=0;ii<ARRAYSIZE;ii++){
+        if (isInExpireDate(now,expireDates[ii])){
+            res = ii ;
+        }
+    }
+    return res ;
+}
+
+int setTimeRange(String timeRange){
+    int index = timeRange.substring(0,1).toInt() ;
+    if (index >= ARRAYSIZE){
+        Particle.publish("error: timerange overflow",String(index),60,PRIVATE) ;
+        return -1;
+    }
+    timeRanges[index] = timeRange ;
+    return index ;
+}
+
+int setExpireDate(String expireDate){
+    int index = expireDate.substring(0,1).toInt() ;
+    if (index >= ARRAYSIZE){
+        Particle.publish("error: expire date overflow",String(index),60,PRIVATE) ;
+        return -1;
+    }
+    expireDates[index] = expireDate ;
+    return index ;
+}
 
 void workTimeRange(){
     if (actualTimeRangeIndex < 0 ) return ; // no time range active
     String actualTimeRange = timeRanges[actualTimeRangeIndex] ;
     char c = actualTimeRange.charAt(35) ;
-    //Particle.publish("c",String(c),60,PRIVATE) ;
     switch (c)
     {
         
@@ -186,7 +281,7 @@ void workTimeRange(){
             break;
         }
         
-        case 'H': { // temp
+        case 'H': { // humidity
             int HumiSetPoint = actualTimeRange.substring(37).toInt() ;
             if (humidity < HumiSetPoint) {
                 setrelais("on") ;
@@ -196,7 +291,7 @@ void workTimeRange(){
             break;
         }
         
-        case 'P': { // temp
+        case 'P': { // pressure
             int PressuerSetPoint = actualTimeRange.substring(37).toInt() ;
             if (pressure < PressuerSetPoint) {
                 setrelais("on") ;
@@ -205,29 +300,158 @@ void workTimeRange(){
             }
             break;
         }
-        
-/*
 
-        case 'R': // trimmer
-        // statements
+        case 'R': { // trimmer
+            int TrimmerSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (trimmer < TrimmerSetPoint) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
             break;
-        case 'L': // light
-        // statements
+        }
+
+        case 'L': { // PhotoResistor
+            int LightSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (photoresistor < LightSetPoint) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
             break;
-        case 'S': // Switch
-        // statements
+        }
+        
+        case 'S': { // Switch
+            int SwitchSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (SwitchSetPoint > 0) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
             break;
-        case 'A': // buntton 1
-        // statements
+        }
+
+        case 'A': { // button1
+            int Button1SetPoint = actualTimeRange.substring(37).toInt() ;
+            if (Button1SetPoint > 0) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
             break;
-        case 'B':  // buntton 2
-        // statements
+        }
+
+        case 'B': { // button2
+            int Button2SetPoint = actualTimeRange.substring(37).toInt() ;
+            if (Button2SetPoint > 0) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
             break;
-*/
+        }
         default: {
-            Particle.publish("timerangeerror",actualTimeRange,60,PRIVATE) ;
+            Particle.publish("error:unknown setpoint in timeRange",actualTimeRange,60,PRIVATE) ;
         }
     }
+}
+
+void workExpireDate(){
+    if (actualExpireDateIndex < 0 ) return ; // no expire date active
+    String actualExpireDate = expireDates[actualExpireDateIndex] ;
+    char c = actualExpireDate.charAt(42) ;
+    switch (c)
+    {
+        
+        case 'T': { // temp
+            float TempSetPoint = actualTimeRange.substring(37).toFloat() ;
+            //Particle.publish("Tempsetpoint",String(TempSetPoint),60,PRIVATE) ;
+            if (temperature < TempSetPoint) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+        
+        case 'H': { // humidity
+            int HumiSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (humidity < HumiSetPoint) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+        
+        case 'P': { // pressure
+            int PressuerSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (pressure < PressuerSetPoint) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+
+        case 'R': { // trimmer
+            int TrimmerSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (trimmer < TrimmerSetPoint) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+
+        case 'L': { // PhotoResistor
+            int LightSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (photoresistor < LightSetPoint) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+        
+        case 'S': { // Switch
+            int SwitchSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (SwitchSetPoint > 0) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+
+        case 'A': { // button1
+            int Button1SetPoint = actualTimeRange.substring(37).toInt() ;
+            if (Button1SetPoint > 0) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+
+        case 'B': { // button2
+            int Button2SetPoint = actualTimeRange.substring(37).toInt() ;
+            if (Button2SetPoint > 0) {
+                setrelais("on") ;
+            } else {
+                setrelais("off") ;
+            }
+            break;
+        }
+        default: {
+            Particle.publish("error:unknown setpoint in expireDate",actualTimeRange,60,PRIVATE) ;
+        }
+    }
+}
+
+
+void workSetPoint(char c){
+
 }
 // accessToken = 397c2c0c884ee6ed7b0c33acc25ff890fa59cf6b
 // deviceId = 30001c000647343232363230
@@ -255,10 +479,10 @@ void setup()
     Particle.variable("alarm", alarm) ;
     
     
-    Particle.function("setrelais", setrelais); // accepts "on" to switch on the relais 
+    Particle.function("setrelais", setrelais); // accepts "on" or "off" to switch on/off the relais or a number to switch on the relais for N milliseconds
     Particle.function("setalarm", setalarm); // accept a nummber of beeps to emit (one per second)
-    Particle.function("relaispulse", relaispulse); // accept a number of milliseconds for releais on
-    //Particle.function("setpoint",setpoint);
+    Particle.function("setTimeRange",setTimeRange); // accept a string to set the desiderd time range
+    Particle.function("setExpireDate", setExpireDate); // accept a number of milliseconds for releais on
     
     
     pinMode(BUZZER, OUTPUT);  
@@ -289,6 +513,16 @@ void loop(){
         }
         Particle.publish("timeRangeEntered",actualTimeRange,60,PRIVATE) ;
         lastTimeRangeIndex = actualTimeRangeIndex ;
+    }
+
+    actualExpireDateIndex = getExpireDateForNow();
+    if (actualExpireDateIndex != lastTimeRangeIndex){
+        String actualExpireDate = "NO EXPIRE DATE" ; 
+        if (actualExpireDateIndex > -1){
+            actualExpireDate = expireDates[actualExpireDateIndex] ;
+        }
+        Particle.publish("expireDateEntered",actualExpireDate,60,PRIVATE) ;
+        lastExpireDateIndex = actualExpireDateIndex ;
     }
     
     i++ ;
@@ -366,7 +600,13 @@ void loop(){
     Serial.print("IL RELAIS RISULTA "); if(digitalRead(RELAIS_FDB)==LOW) Serial.print(" *NON* "); Serial.println(" ECCITATO");     
     Serial.println(""); Serial.println(""); 
 */
-    workTimeRange() ;
+    if (actualExpireDateIndex > -1){
+        // priority to ExpireDate on time range
+        workExpireDate() ;
+    } else {
+        workTimeRange() ;
+    }
+    
     delay(1000); 
 }
 
@@ -432,20 +672,17 @@ int setalarm(String command){
     return command.toInt() ;
 }
 
-int setrelais(String command){
+String setrelais(String command){
     int cmd = LOW ;
     if (command == "on")  {
-        cmd = HIGH ;
-    } 
-    digitalWrite(RELAIS_SET, cmd);
-    return cmd ;
+        digitalWrite(RELAIS_SET, HIGH);
+    } if (command == "off"){
+        digitalWrite(RELAIS_SET, LOW);
+    } else {
+        int duration = command.toInt() ;
+        digitalWrite(RELAIS_SET, HIGH);
+        delay(duration) ;
+        digitalWrite(RELAIS_SET, LOW);
+    }
+    return command ;
 }
-
-int relaispulse(String command){
-    int duration = command.toInt() ;
-    digitalWrite(RELAIS_SET, HIGH);
-    delay(duration) ;
-    digitalWrite(RELAIS_SET, LOW);
-    return duration ;
-}
-
