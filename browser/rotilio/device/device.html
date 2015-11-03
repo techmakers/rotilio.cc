@@ -1,10 +1,10 @@
 <div ng-repeat="device in devices">
     <h3>{{device.name}} <span ng-show="device.updatingVariables">(Reading)</span> <span ng-show="device.timeout">(Timeout)</span></h3>
     <div>Last update: {{device.lastUpdate}}</div>
-    <div class="">
+    <div class="container">
         <h4>Variables</h4>
-        <div class="col-md-3" ng-repeat="(key,value) in deviceVariables">
-            <pre>{{key}} = {{deviceVariables[key]}}</pre>
+        <div class="{{deviceVariables[key].class}}" ng-repeat="(key,value) in deviceVariables">
+            <pre>{{key}} = {{deviceVariables[key].value}}</pre>
         </div>
 
         <h4>Functions</h4>

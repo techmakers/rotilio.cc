@@ -4,7 +4,7 @@
 
 */
 
-#define FIRMWARE_VERSION    0.19
+#define FIRMWARE_VERSION    0.22
 
 #define LOOP_DELAY          1000
 
@@ -477,6 +477,27 @@ void sendDebug(int count){
         Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
 }
 
+String api_help = "\nsetrelais:on|off|auto|<msec on>,\nsetalarm:<beeps>" ;
+
+int workMessage(String message){
+    // ex: setrelais:on
+    // ex: setrelais:off
+    // ex: setalarm:10
+    int colonPos = message.indexOf(":") ;
+    if (colonPos < 0) return -1 ;                 // syntax error not found
+    String command = message.substring(0,colonPos) ;
+    String argument = message.substring(colonPos+1) ;
+    if (command.equals("setrelais")){
+        return setrelais(argument) ;
+    } else if (command.equals("setalarm")){
+        return setalarm(argument) ;
+    } else {
+        return -2 ;                         // command not found
+    }
+}
+
+
+
 void setup()
 {
     sendDebug(0) ;
@@ -497,11 +518,11 @@ void setup()
     
     
     Particle.variable("status", status) ;
+    Particle.variable("message_help", api_help) ;
     
-    Particle.function("setrelais", setrelais); // accepts "on" or "off" to switch on/off the relais or a number to switch on the relais for N milliseconds
-    Particle.function("setalarm", setalarm); // accept a nummber of beeps to emit (one per second)
+    Particle.function("message", workMessage); // accept a nummber of beeps to emit (one per second)
     Particle.function("setTimeRange",setTimeRange); // accept a string to set the desiderd time range
-    Particle.function("setExpireDate", setExpireDate); // accept a number of milliseconds for releais on
+    Particle.function("setExpDate", setExpireDate); // accept a number of milliseconds for releais on
     
     
     pinMode(BUZZER, OUTPUT);  
@@ -523,6 +544,11 @@ void setup()
 }
 
 void loop(){
+    
+    if (alarm > 0){
+        sound(1000,250);
+        alarm-- ;
+    }
     
     actualTimeRangeIndex = getTimeRangeForNow();
     if (actualTimeRangeIndex != lastTimeRangeIndex){
@@ -548,11 +574,6 @@ void loop(){
         i = 0;
         l++ ;
         sendDebug(l) ;
-    }
-
-    if (alarm > 0){
-        sound(1000,250);
-        alarm-- ;
     }
     
     
@@ -696,11 +717,7 @@ double humidityRead(void){
 
 int setalarm(String command){
     alarm = command.toInt();
-    if (alarm > 0) {
-        sound(1000,250);
-        alarm-- ;
-    }
-    return command.toInt() ;
+    return alarm ;
 }
 
 /*
