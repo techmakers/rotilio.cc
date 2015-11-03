@@ -5,7 +5,7 @@ function rotiliocc(options){
     var self = this ;
 
     this.options = options || {} ;
-    this.options.refreshVariablePeriod = this.options.refreshVariablePeriod || 3000 ;
+    this.options.refreshVariablePeriod = this.options.refreshVariablePeriod || 30000 ;
     this.options.deviceAdded = this.options.deviceAdded || function(){} ;
     this.options.variableChanged = this.options.variableChanged || function(){} ;
 
@@ -89,7 +89,13 @@ function rotiliocc(options){
                     fetchedDevices++ ;
                     self.devices.push(device) ;
                     self.options.deviceAdded(device) ;
-                    if (fetchedDevices === totDevices) return cb() ;
+                    if (fetchedDevices === totDevices) {
+                        if (self.options.refreshVariablePeriod > 0){
+                            self.updateAllDevices() ;
+                            self.refreshInterval = setInterval(self.updateAllDevices,self.options.refreshVariablePeriod) ;
+                        }
+                        return cb() ;
+                    }
                 });
             }) ;
         });
@@ -100,10 +106,4 @@ function rotiliocc(options){
             updateDeviceVariables(device) ;
         }) ;
     }
-
-
-    if (this.options.refreshVariablePeriod > 0){
-        setInterval(this.updateAllDevices,0) ;
-    }
-
 }

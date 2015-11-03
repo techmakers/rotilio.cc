@@ -6,6 +6,7 @@ angular.module('myApp', [
   'myApp.home',
   'myApp.device',
   'myApp.version',
+  'myApp.utils',
   'myApp.services'
 ]).
 config(['$routeProvider', function($routeProvider) {

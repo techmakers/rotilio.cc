@@ -1,4 +1,4 @@
-angular.module('myApp.services', [])
+angular.module('myApp.utils', [])
     .factory("utils",[function(){
     return {
         readArrayFromCSV : function(data, fieldNamesInFirstRow, rowSeparator, fieldSeparator){

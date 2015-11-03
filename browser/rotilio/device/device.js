@@ -12,7 +12,6 @@ angular.module('myApp.device', ['ngRoute'])
 .controller('DeviceCtrl', ['$scope','$timeout','$interval','$location','$rootScope','utils',
         function($scope,$timeout,$interval,$location,$rootScope,utils) {
 
-
             var savedState = $location.search();
             $scope.access_token = savedState.access_token ;
 
@@ -25,7 +24,7 @@ angular.module('myApp.device', ['ngRoute'])
 
             $scope.devices = [] ;
 
-            var rotilio = new rotiliocc({
+            $scope.rotilio = new rotiliocc({
                 admittedDevices : [savedState.deviceid],
                 deviceAdded: function(device){
                     $timeout(function(){
@@ -49,7 +48,7 @@ angular.module('myApp.device', ['ngRoute'])
                     return ;
                 }
 
-                rotilio.listDevices(function(err){
+                $scope.rotilio.listDevices(function(err){
                     if (err) console.log(err) ;
                     utils.ajaxindicatorstop() ;
                 });
@@ -86,5 +85,9 @@ angular.module('myApp.device', ['ngRoute'])
                 if (!$scope.searchText) return true ;
                 return (value.name.toLowerCase().indexOf($scope.searchText.toLowerCase()) > -1) ;
             }
+
+            $scope.$on("$destroy", function(){
+                delete($scope.rotilio) ;
+            });
 
 }]);

@@ -10,7 +10,19 @@
     </div>
   </form>
 </div>
-
-<div ng-repeat="device in devices | filter:filterDevices">
-  <h3>{{device.name}} - <a href="./#/device?access_token={{access_token}}&deviceid={{device.id}}">view</a>  </h3>
-</div>
+<table class="table table-condensed table-striped">
+  <tbody>
+    <tr ng-repeat="device in devices | filter:filterDevices">
+      <td>
+        <a href="./#/device?access_token={{access_token}}&deviceid={{device.id}}">
+          {{device.name}}
+        </a>
+      </td>
+      <td class="text-right">
+        <a href="./#/device?access_token={{access_token}}&deviceid={{device.id}}">
+          <span class="glyphicon glyphicon-circle-arrow-right"></span>
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
