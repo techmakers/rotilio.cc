@@ -24,6 +24,8 @@ angular.module('myApp.device', ['ngRoute'])
 
             $scope.devices = [] ;
 
+            $scope.deviceVariables = {} ;
+
             $scope.rotilio = new rotiliocc({
                 admittedDevices : [savedState.deviceid],
                 deviceAdded: function(device){
@@ -34,7 +36,18 @@ angular.module('myApp.device', ['ngRoute'])
                 },
                 variableChanged :function(data){
                     $timeout(function(){
-                        console.log("changed",data) ;
+                        // is json ?
+                        try{
+                            var jsonObj = JSON.parse(data.result) ;
+                            console.log("changed",jsonObj) ;
+                            for (var k in jsonObj){
+                                $scope.deviceVariables[k] = jsonObj[k] ;
+                            }
+                        } catch(e){
+                            // isn't json
+                            $scope.deviceVariables[data.name] = data.result ;
+                            console.log("changed",data) ;
+                        }
                     },0) ;
                 }
             }) ;
