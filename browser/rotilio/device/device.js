@@ -41,7 +41,7 @@ angular.module('myApp.device', ['ngRoute'])
                             var jsonObj = JSON.parse(data.result) ;
                             console.log("changed",jsonObj) ;
                             for (var k in jsonObj){
-                                $scope.deviceVariables[k] = jsonObj[k] ;
+                                $scope.deviceVariables[data.name + "." + k] = jsonObj[k] ;
                             }
                         } catch(e){
                             // isn't json
