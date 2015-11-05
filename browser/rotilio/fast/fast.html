@@ -1,4 +1,34 @@
-<div>
-  <button class="btn btn-lg bt-primary" ng-click="goButtonClicked()">GO</button>
-  <div class="text-center"><pre class="col-xs-12 col-md-4">{{response}}</pre></div>
+<div class="text-right">
+  <button class="btn btn-sm btn-default" ng-click="showSetup=!showSetup"><span class="glyphicon glyphicon-cog"></span></button>
 </div>
+
+<div ng-show="showSetup" class="container">
+  <form class="form-group form-inline">
+    <label class="form-label" for="title">Title:</label>
+    <input class="form-control" id="title" type="text" placeholder="Set a title for this button" ng-model="config.title">
+    <div class="distanziale"></div>
+    <button class="form-control btn btn-primary btn-sm btn-block" ng-click="setTitle()"><span class="glyphicon glyphicon-save"></span></button>
+  </form>
+</div>
+
+
+<div class="container text-center">
+  <h3>{{config.title}}</h3>
+  <div class="row">
+    <button style="width:200px;height:200px;" class="btn btn-lg btn-primary" ng-click="goButtonClicked()" ng-disabled="running" >
+      <span ng-show="!running" class="glyphicon glyphicon-flash"></span>
+      <image ng-show="running" src="pics/ajax-loader.gif" />
+    </button>
+  </div>
+  <div style="height:20px"></div>
+  <div class="row">
+    <div style="width:200px;" class="btn btn-lg btn-success" ng-show="success" ng-click="showResponse = !showResponse" >
+      <span class="glyphicon glyphicon-ok-sign"></span>
+    </div>
+    <div style="width:200px;"  class="btn btn-lg btn-danger" ng-show="failure" ng-click="showResponse = !showResponse">
+      <span class="glyphicon glyphicon-remove"></span>
+    </div>
+  </div>
+</div>
+<div style="height:20px"></div>
+<pre ng-show="showResponse">{{response}}</pre>

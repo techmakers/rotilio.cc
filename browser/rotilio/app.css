@@ -28,3 +28,15 @@
   content: "";
   padding: 0;
 }
+
+@media (max-width: 480px) {
+    .distanziale {
+        margin-top:10px;
+    }
+}
+
+@media (min-width: 481px) {
+    .distanziale {
+        display:none
+    }
+}

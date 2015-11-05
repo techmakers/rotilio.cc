@@ -14,7 +14,33 @@ angular.module('myApp.fast', ['ngRoute'])
 
             // http://localhost:8000/rotilio/#/fast?access_token=a0fe08ad1a8fe9ca4ba1a102759ce2ea48b3597a&deviceid=23001d001447343339383037&functionname=message&args=setrelais%3a1000
 
+            $scope.showSetup = false ;
+
+            $scope.showResponse = false ;
+
+            $scope.running = false ;
+            $scope.success = false ;
+            $scope.failure = false ;
+
+            var savedState = $location.search();
+            $scope.config = {
+                title : savedState.title
+            }
+
+            if (!$scope.config.title) $scope.config.title = "My Rotilio Btn" ;
+
+            window.document.title = $scope.config.title ;
+
+            $scope.setTitle = function(){
+                $location.search("title", $scope.config.title);
+                window.document.title = $scope.config.title ;
+            }
+
             $scope.goButtonClicked = function () {
+
+                $scope.running = true ;
+                $scope.success = false ;
+                $scope.failure = false ;
 
                 var savedState = $location.search();
                 var device = savedState.deviceid;
@@ -64,18 +90,24 @@ angular.module('myApp.fast', ['ngRoute'])
                         args:functionArgs
                     }
                 }
-                debugger;
+
                 $scope.response = "Calling...";
 
                 $http(req).then(
                     function successCallback(response) {
                         // this callback will be called asynchronously
                         // when the response is available
+                        $scope.running = false ;
+                        $scope.success = true ;
+                        $scope.failure = false ;
                         $scope.response = response;
 
                     }, function errorCallback(response) {
                         // called asynchronously if an error occurs
                         // or server returns response with an error status.
+                        $scope.running = false ;
+                        $scope.success = false ;
+                        $scope.failure = true ;
                         $scope.response = response;
                     });
             }
