@@ -92,6 +92,17 @@ angular.module('myApp.device', ['ngRoute'])
                 });
             }
 
+            $scope.createFastUrl = function(device,funcName){
+                // http://localhost:8000/rotilio/#/fast?access_token=a0fe08ad1a8fe9ca4ba1a102759ce2ea48b3597a&deviceid=23001d001447343339383037&functionname=message&args=setrelais:1000
+                var funParamValue = device.functionCalls[funcName] ;
+                var url = "/#/fast?access_token=:access_token&deviceid=:deviceId&functionname=:functionName&args=:args"
+                    .replace(':deviceId', device.id)
+                    .replace(":functionName", funcName)
+                    .replace(":access_token", $scope.access_token )
+                    .replace(":arg", encodeURIComponent(funParamValue));
+                $location.path(url) ;
+            }
+
             $scope.subscribeToEvents = function(device){
                 device.eventlog = [] ;
                 spark.getEventStream(false, device.id, function(data) {

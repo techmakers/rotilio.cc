@@ -5,6 +5,7 @@ angular.module('myApp', [
   'ngRoute',
   'myApp.home',
   'myApp.device',
+  'myApp.fast',
   'myApp.version',
   'myApp.utils',
   'myApp.services'
