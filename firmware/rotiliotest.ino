@@ -4,7 +4,7 @@
 
 */
 
-#define FIRMWARE_VERSION    0.22
+#define FIRMWARE_VERSION    0.23
 
 #define LOOP_DELAY          1000
 
@@ -13,7 +13,7 @@
 #define DEBUG_INTERVAL_SECS 30
 
 #define INDIRIZZO_Si7020    0x40
-#define NUMERO_LETTURE      5
+#define NUMERO_LETTURE      1
 
 #define PULSANTE_1          D2
 #define PULSANTE_2          D6
@@ -91,14 +91,14 @@ B = P2              es: B=0     = setpoint button2 == false
 
 String timeRanges[ARRAYSIZE] = { 
     //"00:00-23:59|MTWTFSS|JFMAMJJASOND", // alwais on, alwais off is : 00:00-00:00|mtwtfss|jfmamjjasond
-    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=22", // working days morning
-    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=20",
-    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=22", // lunch time every day
-    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=20",
-    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=22", // dinner time every day
-    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=20", // sleeping time working days
-    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=20", // sleeping time weekend
-    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=22", // weekend morning
+    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=21", // working days morning
+    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=19",
+    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=21", // lunch time every day
+    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=19",
+    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=21", // dinner time every day
+    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=19", // sleeping time working days
+    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=19", // sleeping time weekend
+    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=21", // weekend morning
 };
 
 String expireDates[ARRAYSIZE] = {
@@ -236,6 +236,9 @@ bool isInTimeRange(unsigned long now, String tRange){
 }
 
 int getTimeRangeForNow(){
+    
+    if (digitalRead(SWITCH)==LOW) return -3 ; // no local time range but command only from the cloud
+    
     unsigned long now = Time.now() ;
     int res = -1 ;
     for (int ii=0;ii<ARRAYSIZE;ii++){
@@ -249,6 +252,9 @@ int getTimeRangeForNow(){
 }
 
 int getExpireDateForNow(){
+    
+    if (digitalRead(SWITCH)==LOW) return -3 ; // no local expire date but command only from the cloud
+    
     unsigned long now = Time.now() ;
     int res = -1 ;
     for (int ii=0;ii<ARRAYSIZE;ii++){
@@ -556,7 +562,6 @@ void loop(){
             String actualTimeRange = timeRanges[actualTimeRangeIndex] ;
             Particle.publish("timeRangeEntered",actualTimeRange,60,PRIVATE) ;
         }
-        
         lastTimeRangeIndex = actualTimeRangeIndex ;
     }
 
@@ -576,30 +581,34 @@ void loop(){
         sendDebug(l) ;
     }
     
+    double delta = 0;
     
     temperature = temperatureRead() ;
-    if (abs(lastTemp - temperature) > tempDeltaEvent) {
+    delta = lastTemp - temperature ;
+    if (delta < 0) delta = delta * -1 ;
+    if (delta >= tempDeltaEvent) {
         lastTemp = temperature ;
         Particle.publish("temperatureChanged", String(temperature), 60, PRIVATE);
     }
     
 
     humidity = humidityRead() ;
-    if (abs(lastHumi - humidity) > humiDeltaEvent) {
+    delta = lastHumi - humidity ;
+    if (abs(delta) > humiDeltaEvent) {
         lastHumi = humidity ;
         Particle.publish("humidityChanged", String(humidity), 60, PRIVATE);
     }
     
 
     photoresistor = analogRead(A1) ;
-    if (abs(lastPhotoRes - photoresistor) > photoDeltaEvent) {
+    if (abs(lastPhotoRes - photoresistor) >= photoDeltaEvent) {
         lastPhotoRes = photoresistor;
         Particle.publish("photoresistChanged", String(photoresistor), 60, PRIVATE);
     }
     
     
     trimmer = analogRead(A2) ;
-    if (abs(lastTrimmer - trimmer) > trimmerDeltaEvent) {
+    if (abs(lastTrimmer - trimmer) >= trimmerDeltaEvent) {
         lastTrimmer = trimmer;
         Particle.publish("trimmerChanged", String(trimmer), 60, PRIVATE);
     }
@@ -613,7 +622,7 @@ void loop(){
     if (lastRelais != relais) Particle.publish("relaisChanged", relais ? "true" : "false", 60, PRIVATE);
     
 
-    if(digitalRead(SWITCH)==LOW) sound(500,340) ;
+    //if(digitalRead(SWITCH)==LOW) sound(500,340) ;
     
     if (digitalRead(PULSANTE_1)==LOW){
         sound(1000,170) ;
@@ -639,7 +648,8 @@ void loop(){
     Serial.print("IL RELAIS RISULTA "); if(digitalRead(RELAIS_FDB)==LOW) Serial.print(" *NON* "); Serial.println(" ECCITATO");     
     Serial.println(""); Serial.println(""); 
 */
-    if (relaisOverride == RELAIS_OVERRIDE_NO){
+    
+    if (relaisOverride == RELAIS_OVERRIDE_NO){ // if the switch is off, we dont work time range and expire date
         if (actualExpireDateIndex > -1){
             // priority to ExpireDate on time range
             workExpireDate() ;

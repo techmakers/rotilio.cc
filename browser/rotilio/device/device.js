@@ -41,7 +41,8 @@ angular.module('myApp.device', ['ngRoute'])
                             var jsonObj = JSON.parse(data.result) ;
                             console.log("changed",jsonObj) ;
                             for (var k in jsonObj){
-                                $scope.deviceVariables[data.name + "." + k] = {
+                                var varname = data.name + "." + k ;
+                                $scope.deviceVariables[varname] = {
                                     value: jsonObj[k],
                                     name : data.name + "." + k,
                                     class: "col-md-3 col-sm-6"
@@ -51,15 +52,10 @@ angular.module('myApp.device', ['ngRoute'])
                             // isn't json
                             $scope.deviceVariables[data.name] = {
                                 value : data.result,
-                                name : data.name
+                                name : data.name,
+                                class: "col-xs-12"
                             } ;
                             console.log("changed",data) ;
-                        }
-                        // preparing large cells...
-                        if (typeof $scope.deviceVariables[data.name].value === 'string'){
-                            $scope.deviceVariables[data.name].class="col-xs-12" ;
-                        } else {
-                            $scope.deviceVariables[data.name].class="col-md-3 col-sm-6" ;
                         }
                     },0) ;
                 }
