@@ -2,37 +2,41 @@
     <h3>{{device.name}} <span ng-show="device.updatingVariables">(Reading)</span> <span ng-show="device.timeout">(Timeout)</span></h3>
     <div>Last update: {{device.lastUpdate}}</div>
     <div class="container">
-        <h4>Variables</h4>
-        <div class="{{deviceVariables[key].class}}" ng-repeat="(key,value) in deviceVariables">
-            <pre>{{key}} = {{deviceVariables[key].value}}</pre>
+        <div>
+            <h4>Variables</h4>
+            <div class="{{deviceVariables[key].class}}" ng-repeat="(key,value) in deviceVariables">
+                <pre>{{key}} = {{deviceVariables[key].value}}</pre>
+            </div>
         </div>
 
-        <h4>Functions</h4>
-        <div ng-repeat="func in device.functions">
-            <form class="form-horizontal">
-                <div class="form-group row">
-                    <label style="text-align:left" class="col-xs-3 col-md-2 control-label">{{func}}:</label>
-                    <div class="col-xs-6 col-md-8">
-                        <input class="form-control" type="text" ng-model="device.functionCalls[func]">
+        <div>
+            <h4>Functions</h4>
+            <div ng-repeat="func in device.functions">
+                <form class="form-horizontal">
+                    <div class="form-group row">
+                        <label style="text-align:left" class="col-xs-3 col-md-2 control-label">{{func}}:</label>
+                        <div class="col-xs-6 col-md-8">
+                            <input class="form-control" type="text" ng-model="device.functionCalls[func]">
+                        </div>
+                        <div class="col-xs-3 col-md-2 text-right">
+                            <button class="btn" ng-disabled="!device.functionCalls[func]" ng-click="callFunction(device,func)">Call</button>
+                            <button class="btn" ng-disabled="!device.functionCalls[func]" ng-click="createFastUrl(device,func)">Fast</button>
+                        </div>
                     </div>
-                    <div class="col-xs-3 col-md-2 text-right">
-                        <button class="btn" ng-disabled="!device.functionCalls[func]" ng-click="callFunction(device,func)">Call</button>
-                        <button class="btn" ng-disabled="!device.functionCalls[func]" ng-click="createFastUrl(device,func)">Fast</button>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-12 col-lg-12"><pre ng-show="device.functionResponses[func]">{{device.functionResponses[func]}}</pre></div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-xs-12 col-md-12 col-lg-12"><pre ng-show="device.functionResponses[func]">{{device.functionResponses[func]}}</pre></div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
 
-        <h4>Events</h4>
+        <div>
+            <h4>Events</h4>
 
-        <div ng-repeat="event in device.eventlog">
-            <pre>{{event}}</pre>
+            <div ng-repeat="event in device.eventlog">
+                <pre>{{event}}</pre>
+            </div>
         </div>
-
-        <div style="height:30px" id="bottom"></div>
 
     </div>
 </div>

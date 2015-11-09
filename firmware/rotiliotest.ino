@@ -4,7 +4,8 @@
 
 */
 
-#define FIRMWARE_VERSION    0.23
+#define FIRMWARE_CLASS      "ROTILIO GENERAL PURPOSE"
+#define FIRMWARE_VERSION    0.24
 
 #define LOOP_DELAY          1000
 
@@ -27,7 +28,7 @@
 #define NON_PREMUTO         HIGH
 
 
-#define tempDeltaEvent      0.1
+#define tempDeltaEvent      0.2
 #define humiDeltaEvent      1
 #define photoDeltaEvent     200
 #define trimmerDeltaEvent   100
@@ -56,7 +57,7 @@ int actualTimeRangeIndex = -1 ;
 int actualExpireDateIndex = -1 ;
 
 String status = "{}" ;
-String status_template = "{\"timerange\":<timerange>,\"expiredate\":<expiredate>,\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
+String status_template = "{\"timerange\":<timerange>,\"expiredate\":<expiredate>,\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
 
 // storage for last published values 
 double lastTemp = -999999 ;  
@@ -66,6 +67,13 @@ int lastPhotoRes = -999999 ;
 int lastTrimmer = -999999 ;
 int lastTimeRangeIndex = -1 ;
 int lastExpireDateIndex = -1 ;
+
+// setpoints
+float TempSetPoint = -271 ;
+int HumiSetPoint = -1 ;
+int PressureSetPoint = -1 ;
+int TrimmerSetPoint = -1 ;
+int LightSetPoint = -1 ;
 
 // counter for debug function
 int l=0;
@@ -77,28 +85,44 @@ int timeZone = 1 ;
 
 SET POINTS
 
-T = TEMP            es: T=22.1  = setpoint 22.1 °C 
-H = HUMI            es: H=80    = setpoint 80% 
-P = PRESSIONE       es: P=1800  = setpoint 1800 mbar
-R = TRIMMER         es: R=3400  = setpoint 3400 units (adc, from 0 to 4095)
-L = LIGHT           es: L=1200  = setpoint 1200 units (adc, from 0 to 4095)
-S = SWITCH          es: S=1     = setpoint switch on (1=on, 0=off)
-A = P1              es: A=1     = setpoint button1 == true
-B = P2              es: B=0     = setpoint button2 == false
+TS = TEMP            es: T=22.1  = setpoint 22.1 °C 
+HS = HUMI            es: H=80    = setpoint 80% 
+PS = PRESSIONE       es: P=1800  = setpoint 1800 mbar
+RS = TRIMMER         es: R=3400  = setpoint 3400 units (adc, from 0 to 4095)
+LS = LIGHT           es: L=1200  = setpoint 1200 units (adc, from 0 to 4095)
+SS = SWITCH          es: S=1     = setpoint switch on (1=on, 0=off)
+AS = P1              es: A=1     = setpoint button1 == true
+BS= P2              es: B=0     = setpoint button2 == false
 
 
 */
+# define UICONFIGARRAYSIZE 9
+String uiConfig[UICONFIGARRAYSIZE] = {
+    // page title
+    "[{'t':'head','text':'General purpose app'}]",
+    // sensors
+    "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
+    "[{'n':'humidity'},{'n':'pressure'}]",    
+    "[{'n':'photoresistor'}]",
+    "[{'n':'switch','l':'Switch','t':'switch'},{'n':'button1','t':'led'},{'n':'button2','t':'led'}]", 
+    "[{'n':'relais','t':'led'}]",
+    
+    // actions
+    "[{'t':'button','l':'Warm up','m':'setrelais:on'},{'t':'button','l':'Cool down','m':'setrelais:off'},{'t':'button','l':'Auto','m':'setrelais:auto'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
+    "[{'t':'button','l':'Open door','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
+    "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]"
+};
 
 String timeRanges[ARRAYSIZE] = { 
     //"00:00-23:59|MTWTFSS|JFMAMJJASOND", // alwais on, alwais off is : 00:00-00:00|mtwtfss|jfmamjjasond
-    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=21", // working days morning
-    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=19",
-    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=21", // lunch time every day
-    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=19",
-    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=21", // dinner time every day
-    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=19", // sleeping time working days
-    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=19", // sleeping time weekend
-    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=21", // weekend morning
+    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=22.5", // working days morning
+    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=20",
+    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=22.5", // lunch time every day
+    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=20",
+    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=22.5", // dinner time every day
+    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=20", // sleeping time working days
+    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=20", // sleeping time weekend
+    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=22.5", // weekend morning
 };
 
 String expireDates[ARRAYSIZE] = {
@@ -111,6 +135,118 @@ String expireDates[ARRAYSIZE] = {
     "",
     ""
 };
+
+
+String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, getuiconfig:now, temperaturesetpoint:<temperaturesetpoint>" ;
+
+int workMessage(String message){
+    // ex: setrelais:on
+    // ex: setrelais:off
+    // ex: setalarm:10
+    int colonPos = message.indexOf(":") ;
+    if (colonPos < 0) return -1 ;                 // syntax error not found
+    String command = message.substring(0,colonPos) ;
+    String argument = message.substring(colonPos+1) ;
+    
+    if (command.equals("setrelais")){
+        return setrelais(argument) ;
+        
+    } else if (command.equals("setalarm")){
+        return setalarm(argument) ;
+        
+    } else if (command.equalsIgnoreCase("auto")){
+        relaisOverride = RELAIS_OVERRIDE_NO ;
+        return -1 ;
+        
+    } else if (command.equalsIgnoreCase("getuiconfig")){
+        return sendUIConfig();
+        
+    } else if (command.equalsIgnoreCase("temperaturesetpoint")){
+        TempSetPoint = argument.toFloat();
+        return 0;
+        
+    } else {
+        return -2 ;                         // command not found
+    }
+}
+
+
+
+// data logging section
+// we prepare a matrix for datalogging
+// rows are timeline
+// columns are different metrics: temperature, relais status, humidiy, ...
+
+#define TIMELINE_PERMINUTE_SIZE 60
+
+#define TIMELINE_TEMPERATURE_INDEX 0
+#define TIMELINE_RELAIS_INDEX 1
+
+#define TIMELINE_INDEX_SIZE 2
+
+int perMinuteTimeLine[TIMELINE_PERMINUTE_SIZE][TIMELINE_INDEX_SIZE] = {} ;
+int perMinuteCounter = 0 ;
+int lastMinute = -1 ;
+int perMinuteTimeLinePosition = -1 ;
+
+void preparePerMinuteTimeLine(){
+    for (int r=0;r<TIMELINE_PERMINUTE_SIZE;r++){
+        for (int i=0;i<TIMELINE_INDEX_SIZE;i++){
+            perMinuteTimeLine[r][i] = 0 ;
+        }
+    }
+}
+
+int calcMeanValue(int actualValue, int newValue, int meanCounter){
+    double meanValue = (actualValue * meanCounter + newValue) / (meanCounter+1);
+    return round(meanValue) ;
+}
+
+template <size_t N, size_t M>
+void shiftBackValues(int (&array)[M][N],int maxrows){
+    for (int row=0;row<maxrows-1;row++){
+        for (int col=0;col<TIMELINE_INDEX_SIZE;col++){
+            array[row][col] = array[row+1][col] ;
+        }
+    }
+}
+
+template <size_t N, size_t M>
+void updateCell(int (&array)[M][N], int row, int col, int newValue, int meanCounter){
+    int actualValue = array[row][col] ;
+    array[row][col] = calcMeanValue(actualValue,newValue,meanCounter);
+}
+
+void updateTimeLinePerMinute(){
+    // selecting witch position in the timeline we need to update.
+    // we advance one position every minute
+    // arrived at the end of the timeline (TIMELINE_PERMINUTE_SIZE) 
+    // we will start to shift all the values one position back, to preserve last N values
+    
+    unsigned long now = Time.now() ;
+    int minute = Time.minute(now) ;
+    
+    // if the actual minute is different from the last tracked minute we advance of one position in the time line 
+    if (minute != lastMinute){
+        perMinuteTimeLinePosition++ ;
+        perMinuteCounter = 0 ;
+    } 
+    
+    if (perMinuteTimeLinePosition >= TIMELINE_PERMINUTE_SIZE){
+        shiftBackValues(perMinuteTimeLine,TIMELINE_PERMINUTE_SIZE); // shift all timeline values back one position
+        perMinuteTimeLinePosition = TIMELINE_PERMINUTE_SIZE-1 ;     // returning to last timeline position
+    }
+    
+    int newValue = 0 ;
+    
+    newValue = round(temperature*10) ; // using 123 for storing 12.3
+    updateCell(perMinuteTimeLine,perMinuteTimeLinePosition,TIMELINE_TEMPERATURE_INDEX,newValue,perMinuteCounter) ;
+    
+    newValue = round(relais*10) ; // using 10 for storing 1, we will can see 0.5 as 5 and so on
+    updateCell(perMinuteTimeLine,perMinuteTimeLinePosition,TIMELINE_RELAIS_INDEX,newValue,perMinuteCounter) ;
+    
+    perMinuteCounter++ ;
+}
 
 int daysInMonthOfYear(int month, int year){
     int months[12] = {
@@ -295,85 +431,30 @@ void workTimeRange(){
     {
         
         case 'T': { // temp
-            float TempSetPoint = actualTimeRange.substring(37).toFloat() ;
-            //Particle.publish("Tempsetpoint",String(TempSetPoint),60,PRIVATE) ;
-            if (temperature < TempSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
+            TempSetPoint = actualTimeRange.substring(37).toFloat() ;
             break;
         }
         
         case 'H': { // humidity
-            int HumiSetPoint = actualTimeRange.substring(37).toInt() ;
-            if (humidity < HumiSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
+            HumiSetPoint = actualTimeRange.substring(37).toInt() ;
             break;
         }
         
         case 'P': { // pressure
-            int PressuerSetPoint = actualTimeRange.substring(37).toInt() ;
-            if (pressure < PressuerSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
+            PressureSetPoint = actualTimeRange.substring(37).toInt() ;
             break;
         }
 
         case 'R': { // trimmer
-            int TrimmerSetPoint = actualTimeRange.substring(37).toInt() ;
-            if (trimmer < TrimmerSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
+            TrimmerSetPoint = actualTimeRange.substring(37).toInt() ;
             break;
         }
 
         case 'L': { // PhotoResistor
-            int LightSetPoint = actualTimeRange.substring(37).toInt() ;
-            if (photoresistor < LightSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
+            LightSetPoint = actualTimeRange.substring(37).toInt() ;
             break;
         }
         
-        case 'S': { // Switch
-            int SwitchSetPoint = actualTimeRange.substring(37).toInt() ;
-            if (SwitchSetPoint > 0) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
-            break;
-        }
-
-        case 'A': { // button1
-            int Button1SetPoint = actualTimeRange.substring(37).toInt() ;
-            if (Button1SetPoint > 0) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
-            break;
-        }
-
-        case 'B': { // button2
-            int Button2SetPoint = actualTimeRange.substring(37).toInt() ;
-            if (Button2SetPoint > 0) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
-            break;
-        }
         default: {
             Particle.publish("error:unknown setpoint in timeRange",actualTimeRange,60,PRIVATE) ;
         }
@@ -389,82 +470,41 @@ void workExpireDate(){
         
         case 'T': { // temp
             float TempSetPoint = actualExpireDate.substring(44).toFloat() ;
-            //Particle.publish("Tempsetpoint",String(TempSetPoint),60,PRIVATE) ;
-            if (temperature < TempSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
         
         case 'H': { // humidity
             int HumiSetPoint = actualExpireDate.substring(44).toInt() ;
-            if (humidity < HumiSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
         
         case 'P': { // pressure
             int PressuerSetPoint = actualExpireDate.substring(44).toInt() ;
-            if (pressure < PressuerSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
 
         case 'R': { // 
             int TrimmerSetPoint = actualExpireDate.substring(44).toInt() ;
-            if (trimmer < TrimmerSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
 
         case 'L': { // PhotoResistor
             int LightSetPoint = actualExpireDate.substring(44).toInt() ;
-            if (photoresistor < LightSetPoint) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
         
         case 'S': { // Switch
             int SwitchSetPoint = actualExpireDate.substring(44).toInt() ;
-            if (SwitchSetPoint > 0) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
 
         case 'A': { // button1
             int Button1SetPoint = actualExpireDate.substring(44).toInt() ;
-            if (Button1SetPoint > 0) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
 
         case 'B': { // button2
             int Button2SetPoint = actualExpireDate.substring(44).toInt() ;
-            if (Button2SetPoint > 0) {
-                setrelais("on") ;
-            } else {
-                setrelais("off") ;
-            }
             break;
         }
         default: {
@@ -479,54 +519,20 @@ void workExpireDate(){
 // curl "https://api.particle.io/v1/devices/30001c000647343232363230/temperature?access_token=397c2c0c884ee6ed7b0c33acc25ff890fa59cf6b"
 
 void sendDebug(int count){
-        String debugMsg = "V " + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
+        String debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
         Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
 }
 
-String api_help = "\nsetrelais:on|off|auto|<msec on>,\nsetalarm:<beeps>" ;
-
-int workMessage(String message){
-    // ex: setrelais:on
-    // ex: setrelais:off
-    // ex: setalarm:10
-    int colonPos = message.indexOf(":") ;
-    if (colonPos < 0) return -1 ;                 // syntax error not found
-    String command = message.substring(0,colonPos) ;
-    String argument = message.substring(colonPos+1) ;
-    if (command.equals("setrelais")){
-        return setrelais(argument) ;
-    } else if (command.equals("setalarm")){
-        return setalarm(argument) ;
-    } else {
-        return -2 ;                         // command not found
-    }
-}
-
-
-
-void setup()
-{
+void setup(){
+    
     sendDebug(0) ;
-    /*
-    Particle.variable("expiredate", actualExpireDateIndex) ;
-    Particle.variable("timerange", actualTimeRangeIndex) ;
-    Particle.variable("temperature", temperature);
-    Particle.variable("humidity", humidity);
-    Particle.variable("photoresist", photoresistor);
-    Particle.variable("trimmer", trimmer);
-    Particle.variable("switch", switch0) ;
-    Particle.variable("relais", relais) ;
-    Particle.variable("button1", button1) ;
-    Particle.variable("button2", button2) ;
-    Particle.variable("alarm", alarm) ;
-    */
     
-    
+    preparePerMinuteTimeLine();
     
     Particle.variable("status", status) ;
     Particle.variable("message_help", api_help) ;
     
-    Particle.function("message", workMessage); // accept a nummber of beeps to emit (one per second)
+    Particle.function("message", workMessage);      // see workMessage function 
     Particle.function("setTimeRange",setTimeRange); // accept a string to set the desiderd time range
     Particle.function("setExpDate", setExpireDate); // accept a number of milliseconds for releais on
     
@@ -658,6 +664,12 @@ void loop(){
         }        
     }
     
+    if (temperature < TempSetPoint || humidity < HumiSetPoint || pressure < PressureSetPoint || trimmer < TrimmerSetPoint || photoresistor < LightSetPoint) {
+        setrelais("on") ;
+    } else {
+        setrelais("off") ;
+    }
+    
     status = String(status_template) ; // copying ;
 
     status.replace("<expiredate>",String(actualExpireDateIndex));
@@ -672,6 +684,13 @@ void loop(){
     status.replace("<button1>",String(button1));
     status.replace("<button2>",String(button2));
     status.replace("<alarm>",String(alarm));
+    status.replace("<temperaturesetpoint>",String(TempSetPoint));
+    status.replace("<humiditysetpoint>",String(HumiSetPoint));
+    status.replace("<pressuresetpoint>",String(PressureSetPoint));
+    status.replace("<trimmersetpoint>",String(TrimmerSetPoint));
+    status.replace("<photoresistorsetpoint>",String(LightSetPoint));
+
+    updateTimeLinePerMinute() ;
     
     delay(LOOP_DELAY); 
 }
@@ -761,4 +780,13 @@ int setrelais(String command){
         relaisOverride = RELAIS_OVERRIDE_NO ;
     }
     return cmd ;
+}
+
+int sendUIConfig(){
+    for (int iii=0;iii<UICONFIGARRAYSIZE;iii++){
+        String row = "{'id':" + String(iii) + ",'c':" + uiConfig[iii] + "}" ;
+        Particle.publish("uiConfig",row,60,PRIVATE) ;
+        delay(500) ; // needed to avoid message drops by Particle cloud
+    }
+    return UICONFIGARRAYSIZE ;
 }

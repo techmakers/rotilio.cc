@@ -1,0 +1,49 @@
+<div class="container form-inline">
+    <div ng-repeat="uiRow in uiElements" class="row">
+        <div ng-repeat="uiElement in uiRow" class="col-md-{{uiElement.width}}">
+            <div class="row" ng-if="uiElement.t == 'head'">
+                <h4>{{uiElement.text}}</h4>
+            </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'text'">
+                <span class="col-xs-8">{{uiElement.l}}:</span>
+                <span style="font-size:2em;margin-top:-3px" class="col-xs-4 text-right">{{uiElement.value}}</span>
+            </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch'">
+                <div class="col-xs-8">{{uiElement.l}}:</div>
+                <div class="col-xs-4 text-right">
+                    <div class="btn-group" role="group">
+                        <button type="button" ng-class="{'btn-success': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">On</button>
+                        <button type="button" ng-class="{'btn-success': uiElement.value==false,'btn-default': uiElement.value==true}"class="btn">Off</button>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'led'">
+                <div class="col-xs-8">{{uiElement.l}}:</div>
+                <div class="col-xs-4 text-right">
+                    <button type="button" ng-class="{'btn-danger': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">
+                        <span class="glyphicon glyphicon-flash"></span>
+                    </button>
+                </div>
+            </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'slider'">
+                <span class="col-xs-6">{{uiElement.l}}:</span>
+                <button class="col-xs-2 btn btn-danger" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value - uiElement.step : uiElement.value;updateValue(uiElement)">
+                    <span class="glyphicon glyphicon-triangle-bottom"></span>
+                </button>
+                <div class="col-xs-2 text-center" style="font-size:2em;margin-top:-3px">{{uiElement.value}}</div>
+                <button class="col-xs-2 btn btn-primary"
+                        ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value + uiElement.step : uiElement.value;updateValue(uiElement)"
+                        >
+                    <span class="glyphicon glyphicon-triangle-top"></span>
+                </button>
+                </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'input'">
+                <label class="col-xs-8" for="{{uiElement.n}}">{{uiElement.l}}:</label>
+                <input class="form-control col-xs-4" id="{{uiElement.n}}" type="text" ng-model="uiElement.value" />
+            </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'button'">
+                <button class="btn btn-{{uiElement.color}} btn-block" ng-click="buttonClick(uiElement)" >{{uiElement.l}}</button>
+            </div>
+        </div>
+    </div>
+</div>
