@@ -5,29 +5,33 @@
 */
 
 #define FIRMWARE_CLASS      "ROTILIO GENERAL PURPOSE"
-#define FIRMWARE_VERSION    0.24
+#define FIRMWARE_VERSION    0.25
 
 
-#define UICONFIGARRAYSIZE 11
+#define UICONFIGARRAYSIZE 12
 #define UICONFIGVERSION 2
 
 String uiConfig[UICONFIGARRAYSIZE] = {
     // page title
-    "[{'t':'head','text':'General purpose app'}]",
+    "[{'t':'head','text':'General purpose application'}]",
     
     // timerange
     "[{'n':'timerange','l':'Active time range', 't':'timerange'}]",
+    
     // sensors
     "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
     "[{'n':'humidity'},{'n':'pressure'}]",    
     "[{'n':'photoresistor'}]",
     "[{'n':'switch','l':'Switch','t':'switch'},{'n':'button1','t':'led'},{'n':'button2','t':'led'}]", 
-    "[{'n':'relais','t':'led'}]",
+    "[{'n':'relaisIsInManualMode','l':'Relais is manual','t':'switch'},{'n':'relais','t':'led'}]",
+    
+    // manual mode for relais
     
     // actions
-    "[{'t':'button','l':'Warm up','m':'setrelais:on'},{'t':'button','l':'Cool down','m':'setrelais:off'},{'t':'button','l':'Auto','m':'setrelais:auto'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
-    "[{'t':'button','l':'Open door','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
+    "[{'t':'button','l':'Manual relais on','m':'setrelais:on'},{'t':'button','l':'Manual relais off','m':'setrelais:off'},{'t':'button','l':'Relais on setpoint','m':'setrelais:auto'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
+    "[{'t':'button','l':'Relais on for 1 second','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
     "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
+    "[{'t':'button','l':'3 Beeps','m':'setalarm:3'}]",
     "[{'t':'button','l':'Reset','m':'reset:now'}]"
 };
 
@@ -89,7 +93,7 @@ String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, g
 #define LOOP_DELAY          1000
 
 
-// variable Inizialisation
+// variable Inizialization
 double temperature = 99999 ; 
 double humidity = 9999 ;
 double pressure = -1 ;
@@ -104,7 +108,7 @@ int actualTimeRangeIndex = -1 ;
 int actualExpireDateIndex = -1 ;
 
 String status = "{}" ;
-String status_template = "{\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
+String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
 
 // storage for last published values 
 double lastTemp = -999999 ;  
@@ -131,9 +135,9 @@ int timeZone = 1 ;
 // prevent fast change of relais 
 int lastRelaisSetup = 0 ;
 
-#define RELAIS_OVERRIDE_NO  -1
-#define RELAIS_OVERRIDE_ON  1
-int relaisOverride = RELAIS_OVERRIDE_NO ;
+// when relais is set in manual mode it works regardless setpoint
+int relaisIsInManualMode = 0 ;
+
 
 int workMessage(String message){
     // ex: setrelais:on
@@ -149,10 +153,6 @@ int workMessage(String message){
         
     } else if (command.equals("setalarm")){
         return setalarm(argument) ;
-        
-    } else if (command.equalsIgnoreCase("auto")){
-        relaisOverride = RELAIS_OVERRIDE_NO ;
-        return -1 ;
         
     } else if (command.equalsIgnoreCase("getuiconfig")){
         return sendUIConfig();
@@ -304,42 +304,29 @@ void loop(){
         button2 = !button2 ;
         Particle.publish("button2Changed", button2 ? "true" : "false", 60, PRIVATE);
     }
-
-/*
-    if(digitalRead(PULSANTE_2)==PREMUTO) digitalWrite(RELAIS_SET, HIGH); else digitalWrite(RELAIS_SET, LOW);   
-    Serial.print("TEMPERATURA: "); Serial.print(temperature);   Serial.println(" C");     
-    Serial.print("UMIDITA'   : "); Serial.print(umidity);   Serial.println(" %");         
-    Serial.print("FOTORESISTENZA:-> ");  Serial.println(photores);
-    Serial.print("POTENZIOMETRO :-> ");  Serial.println(trimmer);   
-    Serial.print("PULSANTE 'P1' "); if(digitalRead(PULSANTE_1)==HIGH) Serial.print("*NON*"); Serial.println(" PREMUTO");   
-    Serial.print("PULSANTE 'P2' "); if(digitalRead(PULSANTE_2)==HIGH) Serial.print("*NON*"); Serial.println(" PREMUTO");       
-    Serial.print("SWITCH "); if(digitalRead(SWITCH)==HIGH) Serial.println(" *OFF*"); else Serial.println(" *ON* - BUZZER ATTIVO");     
-    Serial.print("IL RELAIS RISULTA "); if(digitalRead(RELAIS_FDB)==LOW) Serial.print(" *NON* "); Serial.println(" ECCITATO");     
-    Serial.println(""); Serial.println(""); 
-*/
     
-    if (relaisOverride == RELAIS_OVERRIDE_NO){ // if the switch is off, we dont work time range and expire date
-        if (actualExpireDateIndex > -1){
-            // priority to ExpireDate on time range
-            workExpireDate() ;
-        } else {
-            workTimeRange() ;
+    if (actualExpireDateIndex > -1){
+        // priority to ExpireDate on time range
+        workExpireDate() ;
+    } else {
+        workTimeRange() ;
+    }
+    
+    
+    if (!relaisIsInManualMode){
+    // no changes to relais upon setpoint values, for less of 30 seconds (avoid fast on/off commuting to protect the attached utility)
+        unsigned long now = millis() ;
+        unsigned long deltaT = (now - lastRelaisSetup)/1000 ;
+        if (deltaT > 30){
+            if (temperature < TempSetPoint || humidity < HumiSetPoint || pressure < PressureSetPoint || trimmer < TrimmerSetPoint || photoresistor < LightSetPoint) {
+                lastRelaisSetup = now ;
+                setRelaisOn() ;
+            } else {
+                lastRelaisSetup = now ;
+                setRelaisOff() ;
+            }
         }        
     }
-    
-    // no changes to relais upon setpoint values, for less of 30 seconds (avoid fast on/off commuting to protect the attached utility)
-    unsigned long now = millis() ;
-    unsigned long deltaT = (now - lastRelaisSetup)/1000 ;
-    if (deltaT > 30){
-        if (temperature < TempSetPoint || humidity < HumiSetPoint || pressure < PressureSetPoint || trimmer < TrimmerSetPoint || photoresistor < LightSetPoint) {
-            lastRelaisSetup = now ;
-            setrelais("on") ;
-        } else {
-            lastRelaisSetup = now ;
-            setrelais("off") ;
-        }
-    }
-
     
     status = String(status_template) ; // copying ;
 
@@ -360,6 +347,7 @@ void loop(){
     status.replace("<pressuresetpoint>",String(PressureSetPoint));
     status.replace("<trimmersetpoint>",String(TrimmerSetPoint));
     status.replace("<photoresistorsetpoint>",String(LightSetPoint));
+    status.replace("<relaisIsInManualMode>",String(relaisIsInManualMode));
 
     updateTimeLinePerMinute() ;
     
@@ -546,21 +534,18 @@ bool isInTimeRange(unsigned long now, String tRange){
     int hourNow = Time.hour(now) + timeZone ;
     int minuteNow = Time.minute(now) ;
     
-    int hourMinuteNow = minuteNow + hourNow * 60 ;
+    int hourMinuteNow = minuteNow + hourNow * 60 ;          // 23:36 => 1416
     
-    if (hourMinuteFrom > hourMinuteTo){ 
-        //23:00-08:59 @ 23:34
+    if (hourMinuteFrom > hourMinuteTo){                     // 1410 > 539
+        //23:30-08:59 @ 23:34
+        int midNight = 23*60+60 ;                           // 1440
         
-        int midNight = 23*60+60 ;
-        int delta = midNight - hourMinuteFrom ;
+        int delta = midNight - hourMinuteFrom ;             // 1440-1410 => 30
         hourMinuteFrom = 0;
-        hourMinuteTo = hourMinuteTo+delta;
-        hourMinuteNow = hourMinuteNow + delta ;
-        if (hourMinuteNow > midNight) {
-            hourMinuteNow = hourMinuteNow - midNight ;
-        }
+        hourMinuteTo = hourMinuteTo + delta;                // 539+30 => 569
+        hourMinuteNow = hourMinuteNow + delta - midNight ;  // 1416 + 30 - 1440 => 6
     }
-    
+               // 0              6                  6                569
     yesItIs = (hourMinuteFrom <= hourMinuteNow) && (hourMinuteNow <= hourMinuteTo) ;
     
     return yesItIs ;
@@ -708,10 +693,6 @@ void workExpireDate(){
     }
 }
 
-// accessToken = 397c2c0c884ee6ed7b0c33acc25ff890fa59cf6b
-// deviceId = 30001c000647343232363230
-
-// curl "https://api.particle.io/v1/devices/30001c000647343232363230/temperature?access_token=397c2c0c884ee6ed7b0c33acc25ff890fa59cf6b"
 
 void sendDebug(int count){
         String debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
@@ -782,26 +763,40 @@ int setalarm(String command){
 
 */
 
-int setrelais(String command){
+void setRelaisOn(){
+    digitalWrite(RELAIS_SET, HIGH);
+}
+
+void setRelaisOff(){
+    digitalWrite(RELAIS_SET, LOW);
+}
+
+/*
+    if relaisIsInManuaMode setpoint will be ignored.
     
+    on : relais on regardless setpoint
+    off : relais off regardless setpoint
+    auto: relais on or off if setpoint is over or under the measured value
+    
+*/
+int setrelais(String command){
     int cmd = LOW ;
     if (command.equalsIgnoreCase("on"))  {
-        relaisOverride = RELAIS_OVERRIDE_ON ;
+        relaisIsInManualMode = 1 ;
         cmd = HIGH ;
-        digitalWrite(RELAIS_SET, HIGH);
+        setRelaisOn() ;
     } else if (command.equalsIgnoreCase("off")){
-        relaisOverride = RELAIS_OVERRIDE_ON ;
-        digitalWrite(RELAIS_SET, LOW);
+        relaisIsInManualMode = 1 ;
+        setRelaisOff() ;
     } else if (command.equalsIgnoreCase("auto")){
-        relaisOverride = RELAIS_OVERRIDE_NO ;
-        cmd = -1 ;
+        relaisIsInManualMode = 0 ;
     } else {
+        relaisIsInManualMode = 1 ;
         cmd = command.toInt() ;
-        relaisOverride = RELAIS_OVERRIDE_ON ;
-        digitalWrite(RELAIS_SET, HIGH);
+        setRelaisOn() ;
         delay(cmd) ;
-        digitalWrite(RELAIS_SET, LOW);
-        relaisOverride = RELAIS_OVERRIDE_NO ;
+        setRelaisOff() ;
+        relaisIsInManualMode = 0 ;
     }
     return cmd ;
 }
