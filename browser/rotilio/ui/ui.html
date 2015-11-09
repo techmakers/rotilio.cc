@@ -1,3 +1,5 @@
+<h4>{{deviceInfo.name}}</h4>
+
 <div class="container form-inline">
     <div ng-repeat="uiRow in uiElements" class="row">
         <div ng-repeat="uiElement in uiRow" class="col-md-{{uiElement.width}}">
@@ -8,9 +10,13 @@
                 <span class="col-xs-8">{{uiElement.l}}:</span>
                 <span style="font-size:2em;margin-top:-3px" ng-class="{changed:uiElement.changed}" class="col-xs-4 text-right">{{uiElement.value}}</span>
             </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'timerange'">
+                <span class="col-xs-2">{{uiElement.l}}:</span>
+                <span ng-class="{changed:uiElement.changed}" class="col-xs-10 text-right">{{uiElement.value}}</span>
+            </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch'">
-                <div class="col-xs-8">{{uiElement.l}}:</div>
-                <div class="col-xs-4 text-right">
+                <div class="col-xs-6">{{uiElement.l}}:</div>
+                <div class="col-xs-6 text-right">
                     <div class="btn-group" role="group">
                         <button type="button" ng-class="{'btn-success': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">On</button>
                         <button type="button" ng-class="{'btn-success': uiElement.value==false,'btn-default': uiElement.value==true}"class="btn">Off</button>
@@ -46,4 +52,9 @@
             </div>
         </div>
     </div>
+
+
+    <div class="text-right"><span class="glyphicon glyphicon-refresh" ng-click="reload()"></span></div>
+
+
 </div>

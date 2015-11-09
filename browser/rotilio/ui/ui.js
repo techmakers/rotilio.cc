@@ -12,6 +12,8 @@ angular.module('myApp.ui', ['ngRoute'])
 .controller('UiCtrl', ['$scope','$timeout','$interval','$location','$http','utils',
         function($scope,$timeout,$interval,$location,$http,utils) {
 
+            var myParticleAdapter = new ParticleAdapter($http) ;
+
             utils.ajaxindicatorstart("Fetching device infos from Particle cloud...") ;
 
             $scope.running = false ;
@@ -32,138 +34,30 @@ angular.module('myApp.ui', ['ngRoute'])
                 return ;
             }
 
-            $scope.readVariable = function(variableName,onSuccessCb,onErrorCb){
-                // GET /v1/devices/0123456789abcdef01234567/temperature
-                var url = "https://api.particle.io/v1/devices/:deviceId/:variablename?access_token=:access_token"
-                    .replace(':deviceId', $scope.device)
-                    .replace(":variablename", variableName)
-                    .replace(":access_token", $scope.access_token);
+            $scope.saveElementValues = function(){
+                $scope.uiElementsValue = {} ;
+                $scope.uiElements.forEach(function(uiElementRow){
+                    uiElementRow.forEach(function(uiElement){
+                        var varName = uiElement.n ;
+                        $scope.uiElementsValue[varName] = uiElement.value ;
+                    }) ;
+                }) ;
+            };
 
-                var req = {
-                    method: 'GET',
-                    url: url
-                }
-
-                $scope.response = "Reading...";
-
-                $http(req).then(
-                    function successCallback(response) {
-                        // this callback will be called asynchronously
-                        // when the response is available
-                        $scope.running = false ;
-                        $scope.success = true ;
-                        $scope.failure = false ;
-                        $scope.response = response;
-                        if (onSuccessCb) onSuccessCb(response) ;
-
-                    }, function errorCallback(response) {
-                        // called asynchronously if an error occurs
-                        // or server returns response with an error status.
-                        $scope.running = false ;
-                        $scope.success = false ;
-                        $scope.failure = true ;
-                        $scope.response = response;
-                        if (onErrorCb) onErrorCb(response) ;
-                    });
-            }
-
-            $scope.callFunction = function(functionName, functionArgs,onSuccessCb,onErrorCb) {
-
-                console.log(functionName,functionArgs) ;
-
-                $scope.running = true ;
-                $scope.success = false ;
-                $scope.failure = false ;
-
-
-                if (!functionName){
-                    $scope.response = "No function name specified" ;
-                    return ;
-                }
-
-
-                if (!functionArgs){
-                    $scope.response = "No function args specified";
-                    return ;
-                }
-
-
-                var url = "https://api.particle.io/v1/devices/:deviceId/:functionName?access_token=:access_token&args=:arg"
-                    .replace(':deviceId', $scope.device)
-                    .replace(":functionName", functionName)
-                    .replace(":access_token", $scope.access_token)
-                    .replace(":arg", encodeURIComponent(functionArgs));
-
-                var req = {
-                    method: 'POST',
-                    url: url,
-                    /*
-                     headers: {
-                     "Content-type" : "application/x-www-form-urlencoded"
-                     },
-                     */
-                    data:{
-                        args:functionArgs
+            myParticleAdapter.getDeviceInfo(
+                $scope.device,
+                $scope.access_token,
+                function(response){
+                    $scope.deviceInfo = {} ;
+                    console.log("deviceInfo",response);
+                    if (response.status == 200){
+                        $scope.deviceInfo = response.data ;
                     }
+                },
+                function(response){
+                    alert(JSON.stringify(response));
                 }
-
-                $scope.response = "Calling...";
-
-                $http(req).then(
-                    function successCallback(response) {
-                        // this callback will be called asynchronously
-                        // when the response is available
-                        $scope.running = false ;
-                        $scope.success = true ;
-                        $scope.failure = false ;
-                        $scope.response = response;
-                        if (onSuccessCb) onSuccessCb(response) ;
-
-                    }, function errorCallback(response) {
-                        // called asynchronously if an error occurs
-                        // or server returns response with an error status.
-                        $scope.running = false ;
-                        $scope.success = false ;
-                        $scope.failure = true ;
-                        $scope.response = response;
-                        if (onErrorCb) onErrorCb(response) ;
-                    });
-            }
-
-            $scope.subscribeToEvents = function(device, eventListeners){
-
-                // GET /v1/devices/{DEVICE_ID}/events
-                if (device) {
-                    var eventSourceUrl = "https://api.spark.io/v1/devices/" + device + "/events/?access_token=" + $scope.access_token ;
-                } else {
-                    var eventSourceUrl = "https://api.spark.io/v1/events/?access_token=" + $scope.access_token ;
-                }
-
-                var eventSource = new EventSource(eventSourceUrl);
-
-                console.log('eventsource URL',eventSourceUrl) ;
-
-                eventSource.addEventListener('open', function(e) {
-                    console.log("Opened!");
-                },false);
-
-                eventSource.addEventListener('error', function(e) {
-                    console.log("Errored!",e.message);
-                },false);
-
-                eventSource.addEventListener('debugmsg',function(e){
-                    console.log("debugmsg",e.data);
-                });
-
-                if (!eventListeners) return eventSource ;
-
-                for (var eventName in eventListeners){
-                    eventSource.addEventListener(eventName,eventListeners[eventName])
-                }
-
-                return eventSource ;
-
-            }
+            )
 
             $scope.$on("$destroy", function(){
 
@@ -172,16 +66,23 @@ angular.module('myApp.ui', ['ngRoute'])
 
 
             // preparing container for UI Elements
-            $scope.uiElements = [] ;
+            var uiElementsItem = localStorage.getItem("uiElements") ;
+            if (uiElementsItem){
+                $scope.uiElements = JSON.parse(uiElementsItem) || [] ;
+            } else {
+                $scope.uiElements = [] ;
+            }
 
-            // we will receive ui configuration elements via "publish" from the device itself
-            $scope.eventSource = $scope.subscribeToEvents($scope.device,{
+
+
+            $scope.eventSourceTriggers = {
                 "uiConfig" : function(e){
                     //console.log('uiConfig',e) ;
                     // data: "{"data":"{0:[{'n':'status.temperature','l':'Temperature'}, {'n':'status.temperaturesetpoint','min':-10,'max':30,'l':'Set temp:','t':'slider'}]}","ttl":"60","published_at":"2015-11-08T20:54:01.811Z","coreid":"30001c000647343232363230"}"
                     var data = JSON.parse(e.data).data.replace(/'/g,'"') ;
                     console.log("data for uiConfig",data) ;
                     var dataObj = JSON.parse(data);
+                    // retaining actual element value
                     $scope.uiElements[dataObj.id] = dataObj.c ;
                     // distributing width equally for each element (based on 12 cols units of bootstrap)
                     var width = Math.floor(12/dataObj.c.length) ;
@@ -198,9 +99,15 @@ angular.module('myApp.ui', ['ngRoute'])
                         if (uiElement.t == 'button'){
                             if (!uiElement.color) uiElement.color = "primary" ;
                         }
+                        if ($scope.uiElementsValue[uiElement.n]){
+                            uiElement.value = $scope.uiElementsValue[uiElement.n] ;
+                        }
                     });
                 }
-            }) ;
+            } ;
+
+            // we will receive ui configuration elements via "publish" from the device itself
+            $scope.eventSource = myParticleAdapter.subscribeToEvents($scope.device,$scope.access_token,$scope.eventSourceTriggers) ;
 
 
             // readingVariables
@@ -212,7 +119,9 @@ angular.module('myApp.ui', ['ngRoute'])
                     $scope.readingStatusVariableTentativeCount = 0 ;
                     console.log("too much $scope.readingStatusVariableTentativeCount") ;
                 }
-                $scope.readVariable(
+                myParticleAdapter.readVariable(
+                    $scope.device,
+                    $scope.access_token,
                     "status",
                     function(okResponse){
                         $scope.readingStatusVariableTentativeCount = 0 ;
@@ -237,41 +146,24 @@ angular.module('myApp.ui', ['ngRoute'])
                         console.log("nok var",nokResponse) ;
                     }
                 ) ;
-            }
+            } ;
 
 
-
-            // requesting UI Configuration
-            $scope.callFunction(
-                'message',
-                'getuiconfig:now',
-                function(successResponse){
-                    console.log('ok', successResponse) ;
-                    $scope.readStatusVariable(function(){
-                        utils.ajaxindicatorstop() ;
-                    });
-                },
-                function(failureResponse){
-                    console.log("nok", failureResponse) ;
-                }
-            ) ;
-
-
-            // interface callbacks
-
-
+            // interface
             $scope.resetChanged = function(){
                 $scope.uiElements.forEach(function(uiElementRow){
                     uiElementRow.forEach(function(uiElement){
                         uiElement.changed = false ;
                     }) ;
                 }) ;
-            }
+            };
 
             $scope.updateValue = function(uiElement){
                 var functionArgs = uiElement.n + ":" + uiElement.value ;
                 var functionName = 'message' ;
-                $scope.callFunction(
+                myParticleAdapter.callFunction(
+                    $scope.device,
+                    $scope.accessToken,
                     functionName,
                     functionArgs,
                     function(okStatus){
@@ -282,12 +174,14 @@ angular.module('myApp.ui', ['ngRoute'])
                         console.log("nok",nokStatus) ;
                     }
                 )
-            }
+            } ;
 
             $scope.buttonClick = function(uiElement){
                 var functionArgs = uiElement.m ;
                 var functionName = 'message' ;
-                $scope.callFunction(
+                myParticleAdapter.callFunction(
+                    $scope.device,
+                    $scope.access_token,
                     functionName,
                     functionArgs,
                     function(okStatus){
@@ -298,11 +192,51 @@ angular.module('myApp.ui', ['ngRoute'])
                         console.log("nok",nokStatus) ;
                     }
                 )
+            } ;
+
+            $scope.reload = function(){
+                localStorage.removeItem("uiElements") ;
+                location.reload(true);
             }
+
+            if ($scope.uiElements.length > 0){
+                utils.ajaxindicatorstop() ;
+                $scope.readStatusVariable(function(){
+                    $scope.saveElementValues() ;
+                    $scope.refreshUiConfig() ;
+                }) ;
+            } else {
+                $scope.refreshUiConfig() ;
+            }
+
+            // requesting UI Configuration
+            $scope.refreshUiConfig = function(){
+                myParticleAdapter.callFunction(
+                    $scope.device,
+                    $scope.access_token,
+                    'message',
+                    'getuiconfig:now',
+                    function(successResponse){
+                        console.log('ok', successResponse) ;
+                        if (successResponse.status == 200){
+                            // at this time photon already sent all config intems in $scope.uiElements ;
+                            localStorage.setItem("uiElements",JSON.stringify($scope.uiElements)) ;
+                            $scope.readStatusVariable(function(){
+                                utils.ajaxindicatorstop() ;
+                            });
+                        }
+
+                    },
+                    function(failureResponse){
+                        console.log("nok", failureResponse) ;
+                    }
+                ) ;
+            };
+
 
             $interval(function(){
                 $scope.readStatusVariable() ;
-            },10000)
+            },10000) ;
 
 
 }]);

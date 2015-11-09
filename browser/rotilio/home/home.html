@@ -14,7 +14,7 @@
   <tbody>
     <tr ng-repeat="device in devices | filter:filterDevices">
       <td>
-        <a href="./#/device?access_token={{access_token}}&deviceid={{device.id}}">
+        <a href="./#/ui?access_token={{access_token}}&deviceid={{device.id}}">
           {{device.name}}
         </a>
       </td>
