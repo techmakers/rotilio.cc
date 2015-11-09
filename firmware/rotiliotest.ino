@@ -8,13 +8,17 @@
 #define FIRMWARE_VERSION    0.24
 
 
-# define UICONFIGARRAYSIZE 10
+#define UICONFIGARRAYSIZE 11
+#define UICONFIGVERSION 2
+
 String uiConfig[UICONFIGARRAYSIZE] = {
     // page title
     "[{'t':'head','text':'General purpose app'}]",
     
+    // timerange
+    "[{'n':'timerange','l':'Active time range', 't':'timerange'}]",
     // sensors
-    "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','step':0.1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
+    "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
     "[{'n':'humidity'},{'n':'pressure'}]",    
     "[{'n':'photoresistor'}]",
     "[{'n':'switch','l':'Switch','t':'switch'},{'n':'button1','t':'led'},{'n':'button2','t':'led'}]", 
@@ -100,7 +104,7 @@ int actualTimeRangeIndex = -1 ;
 int actualExpireDateIndex = -1 ;
 
 String status = "{}" ;
-String status_template = "{\"timerange\":<timerange>,\"expiredate\":<expiredate>,\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
+String status_template = "{\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
 
 // storage for last published values 
 double lastTemp = -999999 ;  
@@ -339,8 +343,8 @@ void loop(){
     
     status = String(status_template) ; // copying ;
 
-    status.replace("<expiredate>",String(actualExpireDateIndex));
-    status.replace("<timerange>",String(actualTimeRangeIndex));
+    status.replace("<expiredate>",actualExpireDateIndex > -1 ? expireDates[actualExpireDateIndex] : "NO EXPIRE DATE");
+    status.replace("<timerange>",actualTimeRangeIndex > -1 ? timeRanges[actualTimeRangeIndex] : "NO ACTIVE TIME RANGE");
     status.replace("<temperature>",String(temperature));
     status.replace("<humidity>",String(humidity));
     status.replace("<pressure>",String(pressure));
@@ -808,5 +812,5 @@ int sendUIConfig(){
         Particle.publish("uiConfig",row,60,PRIVATE) ;
         delay(500) ; // needed to avoid message drops by Particle cloud
     }
-    return UICONFIGARRAYSIZE ;
+    return UICONFIGVERSION ;
 }
