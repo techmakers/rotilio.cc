@@ -24,6 +24,8 @@ angular.module('myApp.ui', ['ngRoute'])
             $scope.device = savedState.deviceid;
             $scope.access_token = savedState.access_token;
 
+            $scope.uiElementsValue = {} ;
+
             if (!$scope.device) {
                 $scope.response = "No device specified" ;
                 return ;
@@ -163,7 +165,7 @@ angular.module('myApp.ui', ['ngRoute'])
                 var functionName = 'message' ;
                 myParticleAdapter.callFunction(
                     $scope.device,
-                    $scope.accessToken,
+                    $scope.access_token,
                     functionName,
                     functionArgs,
                     function(okStatus){
@@ -197,17 +199,7 @@ angular.module('myApp.ui', ['ngRoute'])
             $scope.reload = function(){
                 localStorage.removeItem("uiElements") ;
                 location.reload(true);
-            }
-
-            if ($scope.uiElements.length > 0){
-                utils.ajaxindicatorstop() ;
-                $scope.readStatusVariable(function(){
-                    $scope.saveElementValues() ;
-                    $scope.refreshUiConfig() ;
-                }) ;
-            } else {
-                $scope.refreshUiConfig() ;
-            }
+            };
 
             // requesting UI Configuration
             $scope.refreshUiConfig = function(){
@@ -232,6 +224,19 @@ angular.module('myApp.ui', ['ngRoute'])
                     }
                 ) ;
             };
+
+
+            if ($scope.uiElements.length > 0){
+                utils.ajaxindicatorstop() ;
+                $scope.readStatusVariable(function(){
+                    $scope.saveElementValues() ;
+                    $scope.refreshUiConfig() ;
+                }) ;
+            } else {
+                $scope.refreshUiConfig() ;
+            }
+
+
 
 
             $interval(function(){
