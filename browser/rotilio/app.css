@@ -40,3 +40,7 @@
         display:none
     }
 }
+
+.changed {
+    color:red
+}

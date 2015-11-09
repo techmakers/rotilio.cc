@@ -6,7 +6,7 @@
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'text'">
                 <span class="col-xs-8">{{uiElement.l}}:</span>
-                <span style="font-size:2em;margin-top:-3px" class="col-xs-4 text-right">{{uiElement.value}}</span>
+                <span style="font-size:2em;margin-top:-3px" ng-class="{changed:uiElement.changed}" class="col-xs-4 text-right">{{uiElement.value}}</span>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch'">
                 <div class="col-xs-8">{{uiElement.l}}:</div>
@@ -27,12 +27,12 @@
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'slider'">
                 <span class="col-xs-6">{{uiElement.l}}:</span>
-                <button class="col-xs-2 btn btn-danger" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value - uiElement.step : uiElement.value;updateValue(uiElement)">
+                <button class="col-xs-2 btn btn-danger" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value*1.0 - uiElement.step : uiElement.value;updateValue(uiElement)">
                     <span class="glyphicon glyphicon-triangle-bottom"></span>
                 </button>
-                <div class="col-xs-2 text-center" style="font-size:2em;margin-top:-3px">{{uiElement.value}}</div>
+                <div class="col-xs-2 text-center" ng-class="{changed:uiElement.changed}" style="font-size:2em;margin-top:-3px">{{uiElement.value}}</div>
                 <button class="col-xs-2 btn btn-primary"
-                        ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value + uiElement.step : uiElement.value;updateValue(uiElement)"
+                        ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value*1.0 + uiElement.step : uiElement.value;updateValue(uiElement)"
                         >
                     <span class="glyphicon glyphicon-triangle-top"></span>
                 </button>

@@ -7,9 +7,58 @@
 #define FIRMWARE_CLASS      "ROTILIO GENERAL PURPOSE"
 #define FIRMWARE_VERSION    0.24
 
-#define LOOP_DELAY          1000
 
-#define ARRAYSIZE           8
+# define UICONFIGARRAYSIZE 10
+String uiConfig[UICONFIGARRAYSIZE] = {
+    // page title
+    "[{'t':'head','text':'General purpose app'}]",
+    
+    // sensors
+    "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','step':0.1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
+    "[{'n':'humidity'},{'n':'pressure'}]",    
+    "[{'n':'photoresistor'}]",
+    "[{'n':'switch','l':'Switch','t':'switch'},{'n':'button1','t':'led'},{'n':'button2','t':'led'}]", 
+    "[{'n':'relais','t':'led'}]",
+    
+    // actions
+    "[{'t':'button','l':'Warm up','m':'setrelais:on'},{'t':'button','l':'Cool down','m':'setrelais:off'},{'t':'button','l':'Auto','m':'setrelais:auto'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
+    "[{'t':'button','l':'Open door','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
+    "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
+    "[{'t':'button','l':'Reset','m':'reset:now'}]"
+};
+
+#define TIMERANGEARRAYSIZE  8
+String timeRanges[TIMERANGEARRAYSIZE] = { 
+    //"00:00-23:59|MTWTFSS|JFMAMJJASOND", // alwais on, alwais off is : 00:00-00:00|mtwtfss|jfmamjjasond
+    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=23", // working days morning
+    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=21",
+    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=23", // lunch time every day
+    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=21",
+    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=23", // dinner time every day
+    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=21", // sleeping time working days
+    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=21", // sleeping time weekend
+    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=23", // weekend morning
+};
+
+String expireDates[TIMERANGEARRAYSIZE] = {
+    "0:2015-06-30|08:00:00|2015-07-30|16:00:00|T=22", // set temperature setpoint to 22°C from 30 June 2015 8 o'clock untile 30 July 16 o'clock
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+};
+
+
+String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, getuiconfig:now, temperaturesetpoint:<temperaturesetpoint>" ;
+
+// relais override command
+// 0 : no override
+// 1 : override to value by setRalais
+
+
 
 #define DEBUG_INTERVAL_SECS 30
 
@@ -33,14 +82,8 @@
 #define photoDeltaEvent     200
 #define trimmerDeltaEvent   100
 
-#define RELAIS_OVERRIDE_NO  -1
-#define RELAIS_OVERRIDE_ON  1
+#define LOOP_DELAY          1000
 
-// relais override command
-// 0 : no override
-// 1 : override to value by setRalais
-
-int relaisOverride = RELAIS_OVERRIDE_NO ;
 
 // variable Inizialisation
 double temperature = 99999 ; 
@@ -81,63 +124,12 @@ int i=0;
 
 int timeZone = 1 ;
 
-/*
+// prevent fast change of relais 
+int lastRelaisSetup = 0 ;
 
-SET POINTS
-
-TS = TEMP            es: T=22.1  = setpoint 22.1 °C 
-HS = HUMI            es: H=80    = setpoint 80% 
-PS = PRESSIONE       es: P=1800  = setpoint 1800 mbar
-RS = TRIMMER         es: R=3400  = setpoint 3400 units (adc, from 0 to 4095)
-LS = LIGHT           es: L=1200  = setpoint 1200 units (adc, from 0 to 4095)
-SS = SWITCH          es: S=1     = setpoint switch on (1=on, 0=off)
-AS = P1              es: A=1     = setpoint button1 == true
-BS= P2              es: B=0     = setpoint button2 == false
-
-
-*/
-# define UICONFIGARRAYSIZE 9
-String uiConfig[UICONFIGARRAYSIZE] = {
-    // page title
-    "[{'t':'head','text':'General purpose app'}]",
-    // sensors
-    "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
-    "[{'n':'humidity'},{'n':'pressure'}]",    
-    "[{'n':'photoresistor'}]",
-    "[{'n':'switch','l':'Switch','t':'switch'},{'n':'button1','t':'led'},{'n':'button2','t':'led'}]", 
-    "[{'n':'relais','t':'led'}]",
-    
-    // actions
-    "[{'t':'button','l':'Warm up','m':'setrelais:on'},{'t':'button','l':'Cool down','m':'setrelais:off'},{'t':'button','l':'Auto','m':'setrelais:auto'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
-    "[{'t':'button','l':'Open door','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
-    "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]"
-};
-
-String timeRanges[ARRAYSIZE] = { 
-    //"00:00-23:59|MTWTFSS|JFMAMJJASOND", // alwais on, alwais off is : 00:00-00:00|mtwtfss|jfmamjjasond
-    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=22.5", // working days morning
-    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=20",
-    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=22.5", // lunch time every day
-    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=20",
-    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=22.5", // dinner time every day
-    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=20", // sleeping time working days
-    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=20", // sleeping time weekend
-    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=22.5", // weekend morning
-};
-
-String expireDates[ARRAYSIZE] = {
-    "0:2015-06-30|08:00:00|2015-07-30|16:00:00|T=22", // set temperature setpoint to 22°C from 30 June 2015 8 o'clock untile 30 July 16 o'clock
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
-};
-
-
-String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, getuiconfig:now, temperaturesetpoint:<temperaturesetpoint>" ;
+#define RELAIS_OVERRIDE_NO  -1
+#define RELAIS_OVERRIDE_ON  1
+int relaisOverride = RELAIS_OVERRIDE_NO ;
 
 int workMessage(String message){
     // ex: setrelais:on
@@ -165,11 +157,210 @@ int workMessage(String message){
         TempSetPoint = argument.toFloat();
         return 0;
         
+    } else if (command.equalsIgnoreCase("humiditysetpoint")){
+        HumiSetPoint = argument.toFloat();
+        return 0;
+        
+    } else if (command.equalsIgnoreCase("pressuresetpoint")){
+        PressureSetPoint = argument.toFloat();
+        return 0;
+        
+    } else if (command.equalsIgnoreCase("trimmersetpoint")){
+        TrimmerSetPoint = argument.toFloat();
+        return 0;
+        
+    } else if (command.equalsIgnoreCase("photoresistorsetpoint")){
+        LightSetPoint = argument.toFloat();
+        return 0;
+        
+    } else if (command.equalsIgnoreCase("reset")){
+        System.reset();
+        return 0;
+        
     } else {
         return -2 ;                         // command not found
     }
 }
 
+void setup(){
+    
+    sendDebug(0) ;
+    
+    preparePerMinuteTimeLine();
+    
+    Particle.variable("status", status) ;
+    Particle.variable("message_help", api_help) ;
+    
+    Particle.function("message", workMessage);      // see workMessage function 
+    Particle.function("setTimeRange",setTimeRange); // accept a string to set the desiderd time range
+    Particle.function("setExpDate", setExpireDate); // accept a number of milliseconds for releais on
+    
+    
+    pinMode(BUZZER, OUTPUT);  
+    pinMode(RELAIS_SET, OUTPUT);  
+    pinMode(RELAIS_RESET, OUTPUT);     
+    
+    pinMode(RELAIS_FDB,INPUT_PULLUP);  
+    pinMode(PULSANTE_1, INPUT_PULLUP);     
+    pinMode(PULSANTE_2, INPUT_PULLUP);   
+    pinMode(SWITCH, INPUT_PULLUP); 
+    
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(RELAIS_SET, LOW);
+    digitalWrite(RELAIS_RESET, LOW);    
+
+    Serial.begin(115200);
+    Wire.begin();              // si connette col bus i2c
+    
+}
+
+void loop(){
+    
+    if (alarm > 0){
+        sound(1000,250);
+        alarm-- ;
+    }
+    
+    actualTimeRangeIndex = getTimeRangeForNow();
+    if (actualTimeRangeIndex != lastTimeRangeIndex){
+        if (actualTimeRangeIndex > -1){
+            String actualTimeRange = timeRanges[actualTimeRangeIndex] ;
+            Particle.publish("timeRangeEntered",actualTimeRange,60,PRIVATE) ;
+        }
+        lastTimeRangeIndex = actualTimeRangeIndex ;
+    }
+
+    actualExpireDateIndex = getExpireDateForNow();
+    if (actualExpireDateIndex != lastTimeRangeIndex){
+        if (actualExpireDateIndex > -1){
+            String actualExpireDate = expireDates[actualExpireDateIndex] ;
+            Particle.publish("expireDateEntered",actualExpireDate,60,PRIVATE) ;
+        }
+        lastExpireDateIndex = actualExpireDateIndex ;
+    }
+    
+    i++ ;
+    if (i > DEBUG_INTERVAL_SECS){
+        i = 0;
+        l++ ;
+        sendDebug(l) ;
+    }
+    
+    double delta = 0;
+    
+    temperature = temperatureRead() ;
+    delta = lastTemp - temperature ;
+    if (delta < 0) delta = delta * -1 ;
+    if (delta >= tempDeltaEvent) {
+        lastTemp = temperature ;
+        Particle.publish("temperatureChanged", String(temperature), 60, PRIVATE);
+    }
+    
+
+    humidity = humidityRead() ;
+    delta = lastHumi - humidity ;
+    if (abs(delta) > humiDeltaEvent) {
+        lastHumi = humidity ;
+        Particle.publish("humidityChanged", String(humidity), 60, PRIVATE);
+    }
+    
+
+    photoresistor = analogRead(A1) ;
+    if (abs(lastPhotoRes - photoresistor) >= photoDeltaEvent) {
+        lastPhotoRes = photoresistor;
+        Particle.publish("photoresistChanged", String(photoresistor), 60, PRIVATE);
+    }
+    
+    
+    trimmer = analogRead(A2) ;
+    if (abs(lastTrimmer - trimmer) >= trimmerDeltaEvent) {
+        lastTrimmer = trimmer;
+        Particle.publish("trimmerChanged", String(trimmer), 60, PRIVATE);
+    }
+    
+    int lastSwitch = switch0 ;
+    switch0 = digitalRead(SWITCH) == HIGH ;
+    if (lastSwitch != switch0) Particle.publish("switchChanged", switch0 ? "true" : "false", 60, PRIVATE);
+    
+    int lastRelais = relais ;
+    relais = digitalRead(RELAIS_FDB) == HIGH ;
+    if (lastRelais != relais) Particle.publish("relaisChanged", relais ? "true" : "false", 60, PRIVATE);
+    
+
+    //if(digitalRead(SWITCH)==LOW) sound(500,340) ;
+    
+    if (digitalRead(PULSANTE_1)==LOW){
+        sound(1000,170) ;
+        button1 = !button1 ;
+        Particle.publish("button1Changed", button1 ? "true" : "false", 60, PRIVATE);
+    }
+    
+    if (digitalRead(PULSANTE_2)==LOW){
+        sound(1000,170) ;
+        button2 = !button2 ;
+        Particle.publish("button2Changed", button2 ? "true" : "false", 60, PRIVATE);
+    }
+
+/*
+    if(digitalRead(PULSANTE_2)==PREMUTO) digitalWrite(RELAIS_SET, HIGH); else digitalWrite(RELAIS_SET, LOW);   
+    Serial.print("TEMPERATURA: "); Serial.print(temperature);   Serial.println(" C");     
+    Serial.print("UMIDITA'   : "); Serial.print(umidity);   Serial.println(" %");         
+    Serial.print("FOTORESISTENZA:-> ");  Serial.println(photores);
+    Serial.print("POTENZIOMETRO :-> ");  Serial.println(trimmer);   
+    Serial.print("PULSANTE 'P1' "); if(digitalRead(PULSANTE_1)==HIGH) Serial.print("*NON*"); Serial.println(" PREMUTO");   
+    Serial.print("PULSANTE 'P2' "); if(digitalRead(PULSANTE_2)==HIGH) Serial.print("*NON*"); Serial.println(" PREMUTO");       
+    Serial.print("SWITCH "); if(digitalRead(SWITCH)==HIGH) Serial.println(" *OFF*"); else Serial.println(" *ON* - BUZZER ATTIVO");     
+    Serial.print("IL RELAIS RISULTA "); if(digitalRead(RELAIS_FDB)==LOW) Serial.print(" *NON* "); Serial.println(" ECCITATO");     
+    Serial.println(""); Serial.println(""); 
+*/
+    
+    if (relaisOverride == RELAIS_OVERRIDE_NO){ // if the switch is off, we dont work time range and expire date
+        if (actualExpireDateIndex > -1){
+            // priority to ExpireDate on time range
+            workExpireDate() ;
+        } else {
+            workTimeRange() ;
+        }        
+    }
+    
+    // no changes to relais upon setpoint values, for less of 30 seconds (avoid fast on/off commuting to protect the attached utility)
+    unsigned long now = millis() ;
+    unsigned long deltaT = (now - lastRelaisSetup)/1000 ;
+    if (deltaT > 30){
+        if (temperature < TempSetPoint || humidity < HumiSetPoint || pressure < PressureSetPoint || trimmer < TrimmerSetPoint || photoresistor < LightSetPoint) {
+            lastRelaisSetup = now ;
+            setrelais("on") ;
+        } else {
+            lastRelaisSetup = now ;
+            setrelais("off") ;
+        }
+    }
+
+    
+    status = String(status_template) ; // copying ;
+
+    status.replace("<expiredate>",String(actualExpireDateIndex));
+    status.replace("<timerange>",String(actualTimeRangeIndex));
+    status.replace("<temperature>",String(temperature));
+    status.replace("<humidity>",String(humidity));
+    status.replace("<pressure>",String(pressure));
+    status.replace("<photoresistor>",String(photoresistor));
+    status.replace("<trimmer>",String(trimmer));
+    status.replace("<switch>",String(switch0));
+    status.replace("<relais>",String(relais));
+    status.replace("<button1>",String(button1));
+    status.replace("<button2>",String(button2));
+    status.replace("<alarm>",String(alarm));
+    status.replace("<temperaturesetpoint>",String(TempSetPoint));
+    status.replace("<humiditysetpoint>",String(HumiSetPoint));
+    status.replace("<pressuresetpoint>",String(PressureSetPoint));
+    status.replace("<trimmersetpoint>",String(TrimmerSetPoint));
+    status.replace("<photoresistorsetpoint>",String(LightSetPoint));
+
+    updateTimeLinePerMinute() ;
+    
+    delay(LOOP_DELAY); 
+}
 
 
 // data logging section
@@ -377,7 +568,7 @@ int getTimeRangeForNow(){
     
     unsigned long now = Time.now() ;
     int res = -1 ;
-    for (int ii=0;ii<ARRAYSIZE;ii++){
+    for (int ii=0;ii<TIMERANGEARRAYSIZE;ii++){
         if (!timeRanges[ii].equals("")){
             if (isInTimeRange(now,timeRanges[ii])){
                 res = ii ;
@@ -393,7 +584,7 @@ int getExpireDateForNow(){
     
     unsigned long now = Time.now() ;
     int res = -1 ;
-    for (int ii=0;ii<ARRAYSIZE;ii++){
+    for (int ii=0;ii<TIMERANGEARRAYSIZE;ii++){
         if (!expireDates[ii].equals("")){
             if (isInExpireDate(now,expireDates[ii])){
                 res = ii ;
@@ -405,7 +596,7 @@ int getExpireDateForNow(){
 
 int setTimeRange(String timeRange){
     int index = timeRange.substring(0,1).toInt() ;
-    if (index >= ARRAYSIZE){
+    if (index >= TIMERANGEARRAYSIZE){
         Particle.publish("error: timerange overflow",String(index),60,PRIVATE) ;
         return -1;
     }
@@ -415,7 +606,7 @@ int setTimeRange(String timeRange){
 
 int setExpireDate(String expireDate){
     int index = expireDate.substring(0,1).toInt() ;
-    if (index >= ARRAYSIZE){
+    if (index >= TIMERANGEARRAYSIZE){
         Particle.publish("error: expire date overflow",String(index),60,PRIVATE) ;
         return -1;
     }
@@ -523,178 +714,6 @@ void sendDebug(int count){
         Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
 }
 
-void setup(){
-    
-    sendDebug(0) ;
-    
-    preparePerMinuteTimeLine();
-    
-    Particle.variable("status", status) ;
-    Particle.variable("message_help", api_help) ;
-    
-    Particle.function("message", workMessage);      // see workMessage function 
-    Particle.function("setTimeRange",setTimeRange); // accept a string to set the desiderd time range
-    Particle.function("setExpDate", setExpireDate); // accept a number of milliseconds for releais on
-    
-    
-    pinMode(BUZZER, OUTPUT);  
-    pinMode(RELAIS_SET, OUTPUT);  
-    pinMode(RELAIS_RESET, OUTPUT);     
-    
-    pinMode(RELAIS_FDB,INPUT_PULLUP);  
-    pinMode(PULSANTE_1, INPUT_PULLUP);     
-    pinMode(PULSANTE_2, INPUT_PULLUP);   
-    pinMode(SWITCH, INPUT_PULLUP); 
-    
-    digitalWrite(BUZZER, LOW);
-    digitalWrite(RELAIS_SET, LOW);
-    digitalWrite(RELAIS_RESET, LOW);    
-
-    Serial.begin(115200);
-    Wire.begin();              // si connette col bus i2c
-    
-}
-
-void loop(){
-    
-    if (alarm > 0){
-        sound(1000,250);
-        alarm-- ;
-    }
-    
-    actualTimeRangeIndex = getTimeRangeForNow();
-    if (actualTimeRangeIndex != lastTimeRangeIndex){
-        if (actualTimeRangeIndex > -1){
-            String actualTimeRange = timeRanges[actualTimeRangeIndex] ;
-            Particle.publish("timeRangeEntered",actualTimeRange,60,PRIVATE) ;
-        }
-        lastTimeRangeIndex = actualTimeRangeIndex ;
-    }
-
-    actualExpireDateIndex = getExpireDateForNow();
-    if (actualExpireDateIndex != lastTimeRangeIndex){
-        if (actualExpireDateIndex > -1){
-            String actualExpireDate = expireDates[actualExpireDateIndex] ;
-            Particle.publish("expireDateEntered",actualExpireDate,60,PRIVATE) ;
-        }
-        lastExpireDateIndex = actualExpireDateIndex ;
-    }
-    
-    i++ ;
-    if (i > DEBUG_INTERVAL_SECS){
-        i = 0;
-        l++ ;
-        sendDebug(l) ;
-    }
-    
-    double delta = 0;
-    
-    temperature = temperatureRead() ;
-    delta = lastTemp - temperature ;
-    if (delta < 0) delta = delta * -1 ;
-    if (delta >= tempDeltaEvent) {
-        lastTemp = temperature ;
-        Particle.publish("temperatureChanged", String(temperature), 60, PRIVATE);
-    }
-    
-
-    humidity = humidityRead() ;
-    delta = lastHumi - humidity ;
-    if (abs(delta) > humiDeltaEvent) {
-        lastHumi = humidity ;
-        Particle.publish("humidityChanged", String(humidity), 60, PRIVATE);
-    }
-    
-
-    photoresistor = analogRead(A1) ;
-    if (abs(lastPhotoRes - photoresistor) >= photoDeltaEvent) {
-        lastPhotoRes = photoresistor;
-        Particle.publish("photoresistChanged", String(photoresistor), 60, PRIVATE);
-    }
-    
-    
-    trimmer = analogRead(A2) ;
-    if (abs(lastTrimmer - trimmer) >= trimmerDeltaEvent) {
-        lastTrimmer = trimmer;
-        Particle.publish("trimmerChanged", String(trimmer), 60, PRIVATE);
-    }
-    
-    int lastSwitch = switch0 ;
-    switch0 = digitalRead(SWITCH) == HIGH ;
-    if (lastSwitch != switch0) Particle.publish("switchChanged", switch0 ? "true" : "false", 60, PRIVATE);
-    
-    int lastRelais = relais ;
-    relais = digitalRead(RELAIS_FDB) == HIGH ;
-    if (lastRelais != relais) Particle.publish("relaisChanged", relais ? "true" : "false", 60, PRIVATE);
-    
-
-    //if(digitalRead(SWITCH)==LOW) sound(500,340) ;
-    
-    if (digitalRead(PULSANTE_1)==LOW){
-        sound(1000,170) ;
-        button1 = !button1 ;
-        Particle.publish("button1Changed", button1 ? "true" : "false", 60, PRIVATE);
-    }
-    
-    if (digitalRead(PULSANTE_2)==LOW){
-        sound(1000,170) ;
-        button2 = !button2 ;
-        Particle.publish("button2Changed", button2 ? "true" : "false", 60, PRIVATE);
-    }
-
-/*
-    if(digitalRead(PULSANTE_2)==PREMUTO) digitalWrite(RELAIS_SET, HIGH); else digitalWrite(RELAIS_SET, LOW);   
-    Serial.print("TEMPERATURA: "); Serial.print(temperature);   Serial.println(" C");     
-    Serial.print("UMIDITA'   : "); Serial.print(umidity);   Serial.println(" %");         
-    Serial.print("FOTORESISTENZA:-> ");  Serial.println(photores);
-    Serial.print("POTENZIOMETRO :-> ");  Serial.println(trimmer);   
-    Serial.print("PULSANTE 'P1' "); if(digitalRead(PULSANTE_1)==HIGH) Serial.print("*NON*"); Serial.println(" PREMUTO");   
-    Serial.print("PULSANTE 'P2' "); if(digitalRead(PULSANTE_2)==HIGH) Serial.print("*NON*"); Serial.println(" PREMUTO");       
-    Serial.print("SWITCH "); if(digitalRead(SWITCH)==HIGH) Serial.println(" *OFF*"); else Serial.println(" *ON* - BUZZER ATTIVO");     
-    Serial.print("IL RELAIS RISULTA "); if(digitalRead(RELAIS_FDB)==LOW) Serial.print(" *NON* "); Serial.println(" ECCITATO");     
-    Serial.println(""); Serial.println(""); 
-*/
-    
-    if (relaisOverride == RELAIS_OVERRIDE_NO){ // if the switch is off, we dont work time range and expire date
-        if (actualExpireDateIndex > -1){
-            // priority to ExpireDate on time range
-            workExpireDate() ;
-        } else {
-            workTimeRange() ;
-        }        
-    }
-    
-    if (temperature < TempSetPoint || humidity < HumiSetPoint || pressure < PressureSetPoint || trimmer < TrimmerSetPoint || photoresistor < LightSetPoint) {
-        setrelais("on") ;
-    } else {
-        setrelais("off") ;
-    }
-    
-    status = String(status_template) ; // copying ;
-
-    status.replace("<expiredate>",String(actualExpireDateIndex));
-    status.replace("<timerange>",String(actualTimeRangeIndex));
-    status.replace("<temperature>",String(temperature));
-    status.replace("<humidity>",String(humidity));
-    status.replace("<pressure>",String(pressure));
-    status.replace("<photoresistor>",String(photoresistor));
-    status.replace("<trimmer>",String(trimmer));
-    status.replace("<switch>",String(switch0));
-    status.replace("<relais>",String(relais));
-    status.replace("<button1>",String(button1));
-    status.replace("<button2>",String(button2));
-    status.replace("<alarm>",String(alarm));
-    status.replace("<temperaturesetpoint>",String(TempSetPoint));
-    status.replace("<humiditysetpoint>",String(HumiSetPoint));
-    status.replace("<pressuresetpoint>",String(PressureSetPoint));
-    status.replace("<trimmersetpoint>",String(TrimmerSetPoint));
-    status.replace("<photoresistorsetpoint>",String(LightSetPoint));
-
-    updateTimeLinePerMinute() ;
-    
-    delay(LOOP_DELAY); 
-}
-
 void sound(int cicles,int period){ // emette il suono .. 
     for(int n=0;n<cicles;n++) {
         digitalWrite(BUZZER, HIGH);
@@ -758,6 +777,7 @@ int setalarm(String command){
     auto: rules from timerange or expire date
 
 */
+
 int setrelais(String command){
     
     int cmd = LOW ;

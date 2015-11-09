@@ -221,9 +221,15 @@ angular.module('myApp.ui', ['ngRoute'])
                         $scope.uiElements.forEach(function(uiElementRow){
                             uiElementRow.forEach(function(uiElement){
                                 var varName = uiElement.n ;
-                                uiElement.value = data[varName] ;
+                                if (uiElement.value != data[varName]){
+                                    uiElement.changed = true ;
+                                    uiElement.value = data[varName] ;
+                                }
                             }) ;
                         }) ;
+                        $timeout(function(){
+                            $scope.resetChanged() ;
+                        },3000) ;
                         cb(okResponse) ;
                     },
                     function(nokResponse){
@@ -252,6 +258,15 @@ angular.module('myApp.ui', ['ngRoute'])
 
 
             // interface callbacks
+
+
+            $scope.resetChanged = function(){
+                $scope.uiElements.forEach(function(uiElementRow){
+                    uiElementRow.forEach(function(uiElement){
+                        uiElement.changed = false ;
+                    }) ;
+                }) ;
+            }
 
             $scope.updateValue = function(uiElement){
                 var functionArgs = uiElement.n + ":" + uiElement.value ;
@@ -287,7 +302,7 @@ angular.module('myApp.ui', ['ngRoute'])
 
             $interval(function(){
                 $scope.readStatusVariable() ;
-            },30000)
+            },10000)
 
 
 }]);
