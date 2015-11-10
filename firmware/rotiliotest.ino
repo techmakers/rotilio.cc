@@ -5,7 +5,7 @@
 */
 
 #define FIRMWARE_CLASS      "ROTILIO GENERAL PURPOSE"
-#define FIRMWARE_VERSION    0.25
+#define FIRMWARE_VERSION    0.26
 
 
 #define UICONFIGARRAYSIZE 13
@@ -40,14 +40,14 @@ String uiConfig[UICONFIGARRAYSIZE] = {
 #define TIMERANGEARRAYSIZE  8
 String timeRanges[TIMERANGEARRAYSIZE] = { 
     //"00:00-23:59|MTWTFSS|JFMAMJJASOND", // alwais on, alwais off is : 00:00-00:00|mtwtfss|jfmamjjasond
-    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=23", // working days morning
-    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=21",
-    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=23", // lunch time every day
-    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=21",
-    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=23", // dinner time every day
-    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=21", // sleeping time working days
-    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=21", // sleeping time weekend
-    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=23", // weekend morning
+    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=22", // working days morning
+    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=20",
+    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=22", // lunch time every day
+    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=20",
+    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=22", // dinner time every day
+    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=20", // sleeping time working days
+    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=20", // sleeping time weekend
+    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=22", // weekend morning
 };
 
 String expireDates[TIMERANGEARRAYSIZE] = {
@@ -92,7 +92,7 @@ String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, g
 #define photoDeltaEvent     200
 #define trimmerDeltaEvent   100
 
-#define LOOP_DELAY          1000
+#define LOOP_DELAY          1000.0
 
 
 // variable Inizialization
@@ -111,6 +111,7 @@ int actualExpireDateIndex = -1 ;
 
 String status = "{}" ;
 String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"timerangeon\":<timerangeon>,\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
+
 
 // storage for last published values 
 double lastTemp = -999999 ;  
@@ -141,6 +142,24 @@ int lastRelaisSetup = 0 ;
 int relaisIsInManualMode = 0 ;
 
 int timeRangeOn = 1;
+
+// stats
+double relaisOnMinutesInLastDay = 0 ;
+double relaisOnAverageMinutesPerDay = 0 ;
+int relaisOnAveragePerDayCounter = 0;
+int lastDay = 0 ;
+
+double temperatureMin = 9999 ;
+double temperatureMax = -9999 ;
+int humidityMin = 9999 ;
+int humidityMax = -9999 ;
+int pressureMin = 9999 ;
+int pressureMax = -9999 ;
+int lightMin = 9999 ;
+int lightMax = -9999 ;
+
+String stats = "{}" ;
+String stats_template = "{\"Temperature Min\":<temperatureMin>,\"Temperature Max\":<temperatureMax>,\"Humidity Min\":\"<humidityMin>\",\"Humidity Max\":\"<humidityMax>\",\"Pressure Min\":<pressureMin>,\"Pressure Max\":<pressureMax>,\"Light Min\":<lightMin>,\"Light Max\":<lightMax>,\"RelaisOn minutes today\":<relaisOnMinutesInLastDay>,\"RelaisOn minutes a day\":<relaisOnAverageMinutesPerDay>}" ;
 
 
 int workMessage(String message){
@@ -205,6 +224,7 @@ void setup(){
     preparePerMinuteTimeLine();
     
     Particle.variable("status", status) ;
+    Particle.variable("stats",stats) ;
     Particle.variable("message_help", api_help) ;
     
     Particle.function("message", workMessage);      // see workMessage function 
@@ -361,6 +381,49 @@ void loop(){
     status.replace("<photoresistorsetpoint>",String(LightSetPoint));
     status.replace("<relaisIsInManualMode>",String(relaisIsInManualMode));
     status.replace("<timerangeon>",String(timeRangeOn));
+    
+    stats = String(stats_template);
+    
+    if (lastDay != Time.day()){
+        lastDay = Time.day() ;
+        relaisOnAveragePerDayCounter++ ;
+        relaisOnAverageMinutesPerDay = (relaisOnAverageMinutesPerDay * relaisOnAveragePerDayCounter + relaisOnMinutesInLastDay) / (relaisOnAveragePerDayCounter + 1);
+        relaisOnMinutesInLastDay = 0 ;
+        
+        temperatureMin = 9999 ;
+        temperatureMax = -9999 ;
+        humidityMin = 9999 ;
+        humidityMax = -9999 ;
+        pressureMin = 9999 ;
+        pressureMax = -9999 ;
+        lightMin = 9999 ;
+        lightMax = -9999 ;
+    }
+    
+    if (temperatureMin > temperature) temperatureMin = temperature ;
+    if (temperatureMax < temperature) temperatureMax = temperature ;
+    if (humidityMin > humidity) humidityMin = humidity ;
+    if (humidityMax < humidity) humidityMax = humidity ;
+    if (pressureMin > pressure) pressureMin = pressure ;
+    if (pressureMax < pressure) pressureMax = pressure ;
+    if (lightMin > photoresistor) lightMin = photoresistor ;
+    if (lightMax < photoresistor) lightMax = photoresistor ;
+    
+    if (relais == 1){
+        relaisOnMinutesInLastDay = relaisOnMinutesInLastDay + double(LOOP_DELAY/1000.0/60.0) ;
+    }
+    
+    
+    stats.replace("<temperatureMin>",String(temperatureMin));
+    stats.replace("<temperatureMax>",String(temperatureMax));
+    stats.replace("<humidityMin>",String(humidityMin));
+    stats.replace("<humidityMax>",String(humidityMax));
+    stats.replace("<pressureMin>",String(pressureMin));
+    stats.replace("<pressureMax>",String(pressureMax));
+    stats.replace("<lightMin>",String(lightMin));
+    stats.replace("<lightMax>",String(lightMax));
+    stats.replace("<relaisOnMinutesInLastDay>",String(relaisOnMinutesInLastDay));
+    stats.replace("<relaisOnAverageMinutesPerDay>",String(round(relaisOnAverageMinutesPerDay*10)/10));
 
     updateTimeLinePerMinute() ;
     

@@ -112,7 +112,7 @@ angular.module('myApp.ui', ['ngRoute'])
             $scope.eventSource = myParticleAdapter.subscribeToEvents($scope.device,$scope.access_token,$scope.eventSourceTriggers) ;
 
 
-            // readingVariables
+            // reading status Variables
             $scope.readingStatusVariableTentativeCount = 0 ;
             $scope.readStatusVariable = function(cb){
                 if (!cb) cb = function(){} ;
@@ -127,8 +127,12 @@ angular.module('myApp.ui', ['ngRoute'])
                     "status",
                     function(okResponse){
                         $scope.readingStatusVariableTentativeCount = 0 ;
-                        console.log("ok var",okResponse) ;
-                        var data = JSON.parse(okResponse.data.result);
+                        console.log("ok var status",okResponse) ;
+                        try{
+                            var data = JSON.parse(okResponse.data.result);
+                        } catch (e){
+                            return e ;
+                        }
                         $scope.uiElements.forEach(function(uiElementRow){
                             uiElementRow.forEach(function(uiElement){
                                 var varName = uiElement.n ;
@@ -150,6 +154,42 @@ angular.module('myApp.ui', ['ngRoute'])
                 ) ;
             } ;
 
+            // reading statitical variable
+
+            $scope.stats = {} ;
+            $scope.readingStatsVariableTentativeCount = 0 ;
+            $scope.readStatsVariable = function(cb){
+                if (!cb) cb = function(){} ;
+                $scope.readingStatsVariableTentativeCount++ ;
+                if ($scope.readingStatsVariableTentativeCount > 10){
+                    $scope.readingStatsVariableTentativeCount = 0 ;
+                    console.log("too much $scope.readingStatsVariableTentativeCount") ;
+                }
+                myParticleAdapter.readVariable(
+                    $scope.device,
+                    $scope.access_token,
+                    "stats",
+                    function(okResponse){
+                        $scope.readingStatsVariableTentativeCount = 0 ;
+                        console.log("ok var stats",okResponse) ;
+                        var data = JSON.parse(okResponse.data.result);
+                        for (var varName in data){
+                            var value = data[varName] ;
+                            if (!$scope.stats[varName]) $scope.stats[varName] = {} ;
+                            if ($scope.stats[varName].value != data[varName]) $scope.stats[varName].changed = true ;
+                            $scope.stats[varName].value = data[varName] ;
+                        }
+                        $timeout(function(){
+                            $scope.resetStatsChanged() ;
+                        },3000) ;
+                        cb(okResponse) ;
+                    },
+                    function(nokResponse){
+                        cb(nokResponse) ;
+                        console.log("nok var",nokResponse) ;
+                    }
+                ) ;
+            } ;
 
             // interface
             $scope.resetChanged = function(){
@@ -158,6 +198,12 @@ angular.module('myApp.ui', ['ngRoute'])
                         uiElement.changed = false ;
                     }) ;
                 }) ;
+            };
+
+            $scope.resetStatsChanged = function(){
+                for (var key in $scope.stats){
+                    $scope.stats[key].changed = false ;
+                }
             };
 
             $scope.updateValue = function(uiElement){
@@ -241,7 +287,9 @@ angular.module('myApp.ui', ['ngRoute'])
 
             $interval(function(){
                 $scope.readStatusVariable() ;
+                $scope.readStatsVariable();
             },10000) ;
 
-
+            $scope.readStatusVariable() ;
+            $scope.readStatsVariable();
 }]);

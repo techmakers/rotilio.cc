@@ -1,4 +1,8 @@
-<h4>{{deviceInfo.name}}</h4>
+<h4>
+    {{deviceInfo.name}} <span class="glyphicon glyphicon-refresh" ng-click="reload()"></span>
+</h4>
+
+
 
 <div class="container form-inline">
     <div ng-repeat="uiRow in uiElements" class="row">
@@ -75,8 +79,11 @@
         </div>
     </div>
 
-
-    <div class="text-right"><span class="glyphicon glyphicon-refresh" ng-click="reload()"></span></div>
-
+    <div ng-repeat="(key,stat) in stats">
+        <div style="margin-top:10px" class="row"">
+            <span style="font-size:4.50vw;margin-top:0px" class="col-xs-8">{{key}}:</span>
+            <span style="font-size:4.50vw;margin-top:0px" ng-class="{changed:stat.changed}" class="col-xs-4 text-right">{{stat.value}}</span>
+        </div>
+    </div>
 
 </div>
