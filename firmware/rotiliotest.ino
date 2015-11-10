@@ -8,7 +8,7 @@
 #define FIRMWARE_VERSION    0.25
 
 
-#define UICONFIGARRAYSIZE 12
+#define UICONFIGARRAYSIZE 13
 #define UICONFIGVERSION 2
 
 String uiConfig[UICONFIGARRAYSIZE] = {
@@ -16,19 +16,21 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'t':'head','text':'General purpose application'}]",
     
     // timerange
+    "[{'n':'timerangeon','l':'Timerange ON','t':'switch'}]",
     "[{'n':'timerange','l':'Active time range', 't':'timerange'}]",
     
     // sensors
     "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
     "[{'n':'humidity'},{'n':'pressure'}]",    
     "[{'n':'photoresistor'}]",
-    "[{'n':'switch','l':'Switch','t':'switch'},{'n':'button1','t':'led'},{'n':'button2','t':'led'}]", 
-    "[{'n':'relaisIsInManualMode','l':'Relais is manual','t':'switch'},{'n':'relais','t':'led'}]",
+    "[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'},{'n':'switch','l':'Switch','t':'switch-readonly'}]", 
+    "[{'n':'relaisIsInManualMode','l':'Relais is manual','t':'switch'},{'n':'relais','t':'led','l':'Relais status'}]",
     
     // manual mode for relais
     
+    
     // actions
-    "[{'t':'button','l':'Manual relais on','m':'setrelais:on'},{'t':'button','l':'Manual relais off','m':'setrelais:off'},{'t':'button','l':'Relais on setpoint','m':'setrelais:auto'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
+    "[{'t':'button','l':'Manual relais on','m':'setrelais:on'},{'t':'button','l':'Manual relais off','m':'setrelais:off'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
     "[{'t':'button','l':'Relais on for 1 second','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
     "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
     "[{'t':'button','l':'3 Beeps','m':'setalarm:3'}]",
@@ -108,7 +110,7 @@ int actualTimeRangeIndex = -1 ;
 int actualExpireDateIndex = -1 ;
 
 String status = "{}" ;
-String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
+String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"timerangeon\":<timerangeon>,\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
 
 // storage for last published values 
 double lastTemp = -999999 ;  
@@ -137,6 +139,8 @@ int lastRelaisSetup = 0 ;
 
 // when relais is set in manual mode it works regardless setpoint
 int relaisIsInManualMode = 0 ;
+
+int timeRangeOn = 1;
 
 
 int workMessage(String message){
@@ -175,6 +179,14 @@ int workMessage(String message){
         
     } else if (command.equalsIgnoreCase("photoresistorsetpoint")){
         LightSetPoint = argument.toFloat();
+        return 0;
+        
+    } else if (command.equalsIgnoreCase("timerangeon")){
+        timeRangeOn = argument.toInt();
+        return 0;
+        
+    } else if (command.equalsIgnoreCase("relaisIsInManualMode")){
+        relaisIsInManualMode = argument.toInt();
         return 0;
         
     } else if (command.equalsIgnoreCase("reset")){
@@ -348,6 +360,7 @@ void loop(){
     status.replace("<trimmersetpoint>",String(TrimmerSetPoint));
     status.replace("<photoresistorsetpoint>",String(LightSetPoint));
     status.replace("<relaisIsInManualMode>",String(relaisIsInManualMode));
+    status.replace("<timerangeon>",String(timeRangeOn));
 
     updateTimeLinePerMinute() ;
     
@@ -533,27 +546,26 @@ bool isInTimeRange(unsigned long now, String tRange){
     
     int hourNow = Time.hour(now) + timeZone ;
     int minuteNow = Time.minute(now) ;
+                                                            
+    int hourMinuteNow = minuteNow + hourNow * 60 ;          
     
-    int hourMinuteNow = minuteNow + hourNow * 60 ;          // 23:36 => 1416
-    
-    if (hourMinuteFrom > hourMinuteTo){                     // 1410 > 539
-        //23:30-08:59 @ 23:34
-        int midNight = 23*60+60 ;                           // 1440
-        
-        int delta = midNight - hourMinuteFrom ;             // 1440-1410 => 30
-        hourMinuteFrom = 0;
-        hourMinuteTo = hourMinuteTo + delta;                // 539+30 => 569
-        hourMinuteNow = hourMinuteNow + delta - midNight ;  // 1416 + 30 - 1440 => 6
+    if (hourMinuteFrom > hourMinuteTo){  // 22:00 -> 06:00
+        if (hourMinuteNow > hourMinuteTo){   // @23:00 or @06:30 
+            int midNight = 24*60 ; 
+            yesItIs = (hourMinuteFrom <= hourMinuteNow) && (hourMinuteNow <= midNight) ;
+        } else {
+            yesItIs = (0 <= hourMinuteNow) && (hourMinuteNow <= hourMinuteTo) ;
+        }
+    } else {
+        yesItIs = (hourMinuteFrom <= hourMinuteNow) && (hourMinuteNow <= hourMinuteTo) ;
     }
-               // 0              6                  6                569
-    yesItIs = (hourMinuteFrom <= hourMinuteNow) && (hourMinuteNow <= hourMinuteTo) ;
-    
+
     return yesItIs ;
 }
 
 int getTimeRangeForNow(){
     
-    if (digitalRead(SWITCH)==LOW) return -3 ; // no local time range but command only from the cloud
+    if (timeRangeOn == 0) return -3 ; // no local time range but command only from the cloud
     
     unsigned long now = Time.now() ;
     int res = -1 ;
@@ -569,7 +581,7 @@ int getTimeRangeForNow(){
 
 int getExpireDateForNow(){
     
-    if (digitalRead(SWITCH)==LOW) return -3 ; // no local expire date but command only from the cloud
+    if (timeRangeOn == 0) return -3 ; // no local expire date but command only from the cloud
     
     unsigned long now = Time.now() ;
     int res = -1 ;
@@ -764,6 +776,8 @@ int setalarm(String command){
 */
 
 void setRelaisOn(){
+    // master switch used to block releais
+    if (SWITCH==LOW) return ;
     digitalWrite(RELAIS_SET, HIGH);
 }
 

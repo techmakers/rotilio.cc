@@ -7,24 +7,33 @@
                 <h4>{{uiElement.text}}</h4>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'text'">
-                <span class="col-xs-8">{{uiElement.l}}:</span>
-                <span style="font-size:2em;margin-top:-3px" ng-class="{changed:uiElement.changed}" class="col-xs-4 text-right">{{uiElement.value}}</span>
+                <span style="font-size:4.50vw;margin-top:0px" class="col-xs-8">{{uiElement.l}}:</span>
+                <span style="font-size:4.50vw;margin-top:0px" ng-class="{changed:uiElement.changed}" class="col-xs-4 text-right">{{uiElement.value}}</span>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'timerange'">
                 <span class="col-xs-2">{{uiElement.l}}:</span>
                 <span ng-class="{changed:uiElement.changed}" class="col-xs-10 text-right">{{uiElement.value}}</span>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch'">
-                <div class="col-xs-6">{{uiElement.l}}:</div>
-                <div class="col-xs-6 text-right">
+                <div style="font-size:4.50vw;margin-top:0px" class="col-xs-7">{{uiElement.l}}:</div>
+                <div class="col-xs-5 text-right">
                     <div class="btn-group" role="group">
-                        <button type="button" ng-class="{'btn-success': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">On</button>
-                        <button type="button" ng-class="{'btn-success': uiElement.value==false,'btn-default': uiElement.value==true}"class="btn">Off</button>
+                        <button type="button" ng-click="uiElement.value=1;updateValue(uiElement)" ng-class="{'btn-success': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">On</button>
+                        <button type="button" ng-click="uiElement.value=0;updateValue(uiElement)" ng-class="{'btn-success': uiElement.value==false,'btn-default': uiElement.value==true}"class="btn">Off</button>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch-readonly'">
+                <div style="font-size:4.50vw;margin-top:0px" class="col-xs-7">{{uiElement.l}}:</div>
+                <div class="col-xs-5 text-right">
+                    <div class="btn-group" role="group">
+                        <button disabled="true" type="button" ng-class="{'btn-success': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">On</button>
+                        <button disabled="true" type="button" ng-class="{'btn-success': uiElement.value==false,'btn-default': uiElement.value==true}"class="btn">Off</button>
                     </div>
                 </div>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'led'">
-                <div class="col-xs-8">{{uiElement.l}}:</div>
+                <div style="font-size:4.50vw;margin-top:0px" class="col-xs-8">{{uiElement.l}}:</div>
                 <div class="col-xs-4 text-right">
                     <button type="button" ng-class="{'btn-danger': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">
                         <span class="glyphicon glyphicon-flash"></span>
@@ -32,23 +41,36 @@
                 </div>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'slider'">
-                <span class="col-xs-6">{{uiElement.l}}:</span>
-                <button class="col-xs-2 btn btn-danger" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value*1.0 - uiElement.step : uiElement.value;updateValue(uiElement)">
+                <span style="font-size:4.50vw;margin-top:0px" class="col-xs-5">{{uiElement.l}}:</span>
+                <!--
+                <button style="margin-top:1.0vw" class="col-xs-1 btn btn-danger" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value*1.0 - uiElement.step : uiElement.value;updateValue(uiElement)">
                     <span class="glyphicon glyphicon-triangle-bottom"></span>
                 </button>
-                <div class="col-xs-2 text-center" ng-class="{changed:uiElement.changed}" style="font-size:2em;margin-top:-3px">{{uiElement.value}}</div>
-                <button class="col-xs-2 btn btn-primary"
+                <button style="margin-top:1.0vw" class="col-xs-1 btn btn-primary"
                         ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value*1.0 + uiElement.step : uiElement.value;updateValue(uiElement)"
                         >
                     <span class="glyphicon glyphicon-triangle-top"></span>
                 </button>
+                -->
+                <div class="col-xs-2 text-center" ng-class="{changed:uiElement.changed}" style="font-size:4.50vw;margin-top:0px">{{uiElement.value}}</div>
+                <div class="text-right">
+                    <div class="col-xs-5" role="group">
+                        <button type="button" class="btn btn-danger text-right" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value*1.0 - uiElement.step : uiElement.value;updateValue(uiElement)">
+                            <span class="glyphicon glyphicon-triangle-bottom"></span>
+                        </button>
+                        <button type="button" class="btn btn-primary text-right" ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value*1.0 + uiElement.step : uiElement.value;updateValue(uiElement)">
+                            <span class="glyphicon glyphicon-triangle-top"></span>
+                        </button>
+                    </div>
                 </div>
+
+            </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'input'">
                 <label class="col-xs-8" for="{{uiElement.n}}">{{uiElement.l}}:</label>
                 <input class="form-control col-xs-4" id="{{uiElement.n}}" type="text" ng-model="uiElement.value" />
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'button'">
-                <button class="btn btn-{{uiElement.color}} btn-block" ng-click="buttonClick(uiElement)" >{{uiElement.l}}</button>
+                <button style="font-size:4.50vw" class="btn btn-{{uiElement.color}} btn-block" ng-click="buttonClick(uiElement)" >{{uiElement.l}}</button>
             </div>
         </div>
     </div>
