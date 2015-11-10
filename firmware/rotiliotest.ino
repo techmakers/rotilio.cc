@@ -143,6 +143,9 @@ int relaisIsInManualMode = 0 ;
 
 int timeRangeOn = 1;
 
+int debugVar = -1 ;
+
+
 // stats
 double relaisOnMinutesInLastDay = 0 ;
 double relaisOnAverageMinutesPerDay = 0 ;
@@ -226,6 +229,7 @@ void setup(){
     Particle.variable("status", status) ;
     Particle.variable("stats",stats) ;
     Particle.variable("message_help", api_help) ;
+    Particle.variable("debug",debugVar) ;
     
     Particle.function("message", workMessage);      // see workMessage function 
     Particle.function("setTimeRange",setTimeRange); // accept a string to set the desiderd time range
@@ -608,12 +612,13 @@ bool isInTimeRange(unsigned long now, String tRange){
     int hourMinuteTo = hourTo * 60 + minuteTo ;
     
     int hourNow = Time.hour(now) + timeZone ;
+    if (hourNow > 23) hourNow = 0 ;
     int minuteNow = Time.minute(now) ;
                                                             
     int hourMinuteNow = minuteNow + hourNow * 60 ;          
-    
-    if (hourMinuteFrom > hourMinuteTo){  // 22:00 -> 06:00
-        if (hourMinuteNow > hourMinuteTo){   // @23:00 or @06:30 
+
+    if (hourMinuteFrom > hourMinuteTo){
+        if (hourMinuteNow > hourMinuteTo){
             int midNight = 24*60 ; 
             yesItIs = (hourMinuteFrom <= hourMinuteNow) && (hourMinuteNow <= midNight) ;
         } else {

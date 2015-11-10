@@ -15,8 +15,8 @@
                 <span style="font-size:4.50vw;margin-top:0px" ng-class="{changed:uiElement.changed}" class="col-xs-4 text-right">{{uiElement.value}}</span>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'timerange'">
-                <span class="col-xs-2">{{uiElement.l}}:</span>
-                <span ng-class="{changed:uiElement.changed}" class="col-xs-10 text-right">{{uiElement.value}}</span>
+                <div class="col-xs-12">{{uiElement.l}}:</div>
+                <div ng-class="{changed:uiElement.changed}" class="col-xs-12 text-right">{{uiElement.value}}</div>
             </div>
             <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch'">
                 <div style="font-size:4.50vw;margin-top:0px" class="col-xs-7">{{uiElement.l}}:</div>
