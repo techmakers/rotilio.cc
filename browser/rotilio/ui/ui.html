@@ -4,22 +4,22 @@
 
 
 
-<div class="container form-inline">
+<div class="form-inline">
     <div ng-repeat="uiRow in uiElements" class="row">
         <div ng-repeat="uiElement in uiRow" class="col-md-{{uiElement.width}}">
-            <div class="row" ng-if="uiElement.t == 'head'">
-                <h4>{{uiElement.text}}</h4>
+            <h4 class="" ng-if="uiElement.t == 'head'">
+                {{uiElement.text}}
+            </h4>
+            <div style="margin-top:10px;" class="row border-large" ng-if="uiElement.t == 'text'">
+                <span class="col-xs-8 text-dynamic">{{uiElement.l}}:</span>
+                <span ng-class="{changed:uiElement.changed}" class="col-xs-4 text-right text-dynamic">{{uiElement.value}}</span>
             </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'text'">
-                <span style="font-size:4.50vw;margin-top:0px" class="col-xs-8">{{uiElement.l}}:</span>
-                <span style="font-size:4.50vw;margin-top:0px" ng-class="{changed:uiElement.changed}" class="col-xs-4 text-right">{{uiElement.value}}</span>
-            </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'timerange'">
+            <div style="margin-top:10px" class="row border-large" ng-if="uiElement.t == 'timerange'">
                 <div class="col-xs-12">{{uiElement.l}}:</div>
                 <div ng-class="{changed:uiElement.changed}" class="col-xs-12 text-right">{{uiElement.value}}</div>
             </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch'">
-                <div style="font-size:4.50vw;margin-top:0px" class="col-xs-7">{{uiElement.l}}:</div>
+            <div style="margin-top:10px" class="row border-large" ng-if="uiElement.t == 'switch'">
+                <div class="col-xs-7 text-dynamic">{{uiElement.l}}:</div>
                 <div class="col-xs-5 text-right">
                     <div class="btn-group" role="group">
                         <button type="button" ng-click="uiElement.value=1;updateValue(uiElement)" ng-class="{'btn-success': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">On</button>
@@ -27,8 +27,8 @@
                     </div>
                 </div>
             </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'switch-readonly'">
-                <div style="font-size:4.50vw;margin-top:0px" class="col-xs-7">{{uiElement.l}}:</div>
+            <div style="margin-top:10px" class="row border-large" ng-if="uiElement.t == 'switch-readonly'">
+                <div class="col-xs-7">{{uiElement.l}}:</div>
                 <div class="col-xs-5 text-right">
                     <div class="btn-group" role="group">
                         <button disabled="true" type="button" ng-class="{'btn-success': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">On</button>
@@ -36,53 +36,40 @@
                     </div>
                 </div>
             </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'led'">
-                <div style="font-size:4.50vw;margin-top:0px" class="col-xs-8">{{uiElement.l}}:</div>
+            <div style="margin-top:10px" class="row border-large" ng-if="uiElement.t == 'led'">
+                <div class="col-xs-8">{{uiElement.l}}:</div>
                 <div class="col-xs-4 text-right">
                     <button type="button" ng-class="{'btn-danger': uiElement.value==true,'btn-default': uiElement.value==false}" class="btn">
                         <span class="glyphicon glyphicon-flash"></span>
                     </button>
                 </div>
             </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'slider'">
-                <span style="font-size:4.50vw;margin-top:0px" class="col-xs-5">{{uiElement.l}}:</span>
-                <!--
-                <button style="margin-top:1.0vw" class="col-xs-1 btn btn-danger" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value*1.0 - uiElement.step : uiElement.value;updateValue(uiElement)">
-                    <span class="glyphicon glyphicon-triangle-bottom"></span>
-                </button>
-                <button style="margin-top:1.0vw" class="col-xs-1 btn btn-primary"
-                        ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value*1.0 + uiElement.step : uiElement.value;updateValue(uiElement)"
-                        >
-                    <span class="glyphicon glyphicon-triangle-top"></span>
-                </button>
-                -->
-                <div class="col-xs-2 text-center" ng-class="{changed:uiElement.changed}" style="font-size:4.50vw;margin-top:0px">{{uiElement.value}}</div>
-                <div class="text-right">
-                    <div class="col-xs-5" role="group">
-                        <button type="button" class="btn btn-danger text-right" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value*1.0 - uiElement.step : uiElement.value;updateValue(uiElement)">
-                            <span class="glyphicon glyphicon-triangle-bottom"></span>
-                        </button>
-                        <button type="button" class="btn btn-primary text-right" ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value*1.0 + uiElement.step : uiElement.value;updateValue(uiElement)">
-                            <span class="glyphicon glyphicon-triangle-top"></span>
-                        </button>
-                    </div>
+            <div style="margin-top:10px" class="row border-large" ng-if="uiElement.t == 'slider'">
+                <span class="col-xs-6">{{uiElement.l}}:</span>
+                <div class="col-xs-6 text-right" ng-class="{changed:uiElement.changed}">
+                    {{uiElement.value}}
+                    <button type="button" class="btn btn-danger text-right" ng-click="uiElement.value = uiElement.value > uiElement.min ? uiElement.value*1.0 - uiElement.step : uiElement.value;updateValue(uiElement)">
+                        <span class="glyphicon glyphicon-triangle-bottom"></span>
+                    </button>
+                    <button type="button" class="btn btn-primary text-right" ng-click="uiElement.value = uiElement.value < uiElement.max ? uiElement.value*1.0 + uiElement.step : uiElement.value;updateValue(uiElement)">
+                        <span class="glyphicon glyphicon-triangle-top"></span>
+                    </button>
                 </div>
-
             </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'input'">
+            <div style="margin-top:10px" class="row border-large" ng-if="uiElement.t == 'input'">
                 <label class="col-xs-8" for="{{uiElement.n}}">{{uiElement.l}}:</label>
                 <input class="form-control col-xs-4" id="{{uiElement.n}}" type="text" ng-model="uiElement.value" />
             </div>
-            <div style="margin-top:10px" class="row" ng-if="uiElement.t == 'button'">
-                <button style="font-size:4.50vw" class="btn btn-{{uiElement.color}} btn-block" ng-click="buttonClick(uiElement)" >{{uiElement.l}}</button>
+            <div style="margin-top:10px" class="" ng-if="uiElement.t == 'button'">
+                <button class="btn btn-{{uiElement.color}} btn-block" ng-click="buttonClick(uiElement)" >{{uiElement.l}}</button>
             </div>
         </div>
     </div>
 
     <div ng-repeat="(key,stat) in stats">
-        <div style="margin-top:10px" class="row"">
-            <span style="font-size:4.50vw;margin-top:0px" class="col-xs-8">{{key}}:</span>
-            <span style="font-size:4.50vw;margin-top:0px" ng-class="{changed:stat.changed}" class="col-xs-4 text-right">{{stat.value}}</span>
+        <div style="margin-top:10px" class="row border-large">
+            <span class="col-xs-8">{{key}}:</span>
+            <span ng-class="{changed:stat.changed}" class="col-xs-4 text-right">{{stat.value}}</span>
         </div>
     </div>
 

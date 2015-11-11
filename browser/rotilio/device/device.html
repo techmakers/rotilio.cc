@@ -2,15 +2,16 @@
     <h3>{{device.name}} <span ng-show="device.updatingVariables">(Reading)</span> <span ng-show="device.timeout">(Timeout)</span></h3>
     <div>Last update: {{device.lastUpdate}}</div>
     <div class="container">
-        <div>
-            <h4>Variables</h4>
-            <div class="{{deviceVariables[key].class}}" ng-repeat="(key,value) in deviceVariables">
-                <pre>{{key}} = {{deviceVariables[key].value}}</pre>
-            </div>
-        </div>
+        <h4>Variables</h4>
+        <table class="table table-striped table-responsive">
+            <tr _class="{{deviceVariables[key].class}}" ng-repeat="(key,value) in deviceVariables">
+                <td class="col-xs-6">{{key}}</td><td>{{deviceVariables[key].value}}</td>
+            </tr>
+        </table>
 
+        <h4>Functions</h4>
         <div>
-            <h4>Functions</h4>
+
             <div ng-repeat="func in device.functions">
                 <form class="form-horizontal">
                     <div class="form-group row">
@@ -29,9 +30,9 @@
                 </form>
             </div>
         </div>
-
+        <h4>Events</h4>
         <div>
-            <h4>Events</h4>
+
 
             <div ng-repeat="event in device.eventlog">
                 <pre>{{event}}</pre>

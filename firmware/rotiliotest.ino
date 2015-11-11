@@ -4,11 +4,20 @@
 
 */
 
+
 #define FIRMWARE_CLASS      "ROTILIO GENERAL PURPOSE"
-#define FIRMWARE_VERSION    0.26
+#define FIRMWARE_VERSION    0.27
 
 
-#define UICONFIGARRAYSIZE 13
+// This #include statement was automatically added by the Particle IDE.
+#include "OneWire/OneWire.h"
+
+// This #include statement was automatically added by the Particle IDE.
+#include "spark-dallas-temperature/spark-dallas-temperature.h"
+DallasTemperature dallas(new OneWire(D7));
+
+
+#define UICONFIGARRAYSIZE 14
 #define UICONFIGVERSION 2
 
 String uiConfig[UICONFIGARRAYSIZE] = {
@@ -20,7 +29,8 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'n':'timerange','l':'Active time range', 't':'timerange'}]",
     
     // sensors
-    "[{'n':'temperature','l':'Temperature'}, {'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]", // no 't' means, default:text, no 'l' means use 'n' as label
+    "[{'n':'temperature','l':'Temperature'},{'n':'exttemp','l':'Ext. temp'}]", // no 't' means, default:text, no 'l' means use 'n' as label
+    "[ {'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]",
     "[{'n':'humidity'},{'n':'pressure'}]",    
     "[{'n':'photoresistor'}]",
     "[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'},{'n':'switch','l':'Switch','t':'switch-readonly'}]", 
@@ -109,8 +119,8 @@ int alarm = 0 ;
 int actualTimeRangeIndex = -1 ;
 int actualExpireDateIndex = -1 ;
 
-String status = "{}" ;
-String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"timerangeon\":<timerangeon>,\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
+String status = "{}" ; 
+String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"timerangeon\":<timerangeon>,\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
 
 
 // storage for last published values 
@@ -223,6 +233,8 @@ int workMessage(String message){
 void setup(){
     
     sendDebug(0) ;
+    
+    dallas.begin();
     
     preparePerMinuteTimeLine();
     
@@ -364,11 +376,14 @@ void loop(){
         }        
     }
     
+    float celsius = readCelsiusFromExternalSensor() ;
+    
     status = String(status_template) ; // copying ;
 
     status.replace("<expiredate>",actualExpireDateIndex > -1 ? expireDates[actualExpireDateIndex] : "NO EXPIRE DATE");
     status.replace("<timerange>",actualTimeRangeIndex > -1 ? timeRanges[actualTimeRangeIndex] : "NO ACTIVE TIME RANGE");
     status.replace("<temperature>",String(temperature));
+    status.replace("<exttemp>",String(celsius)) ;
     status.replace("<humidity>",String(humidity));
     status.replace("<pressure>",String(pressure));
     status.replace("<photoresistor>",String(photoresistor));
@@ -890,4 +905,10 @@ int sendUIConfig(){
         delay(500) ; // needed to avoid message drops by Particle cloud
     }
     return UICONFIGVERSION ;
+}
+
+float readCelsiusFromExternalSensor(){
+    dallas.requestTemperatures();
+    float celsius = dallas.getTempCByIndex( 0 );
+    return celsius ;
 }
