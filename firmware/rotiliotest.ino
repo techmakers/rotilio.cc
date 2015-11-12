@@ -14,8 +14,13 @@
 
 // This #include statement was automatically added by the Particle IDE.
 #include "spark-dallas-temperature/spark-dallas-temperature.h"
-DallasTemperature dallas(new OneWire(D7));
 
+// Uncomment following line to activate DS18B20 external temperature sensor 
+//#define DS18B20
+
+#ifdef DS18B20
+DallasTemperature dallas(new OneWire(D7));
+#endif
 
 #define UICONFIGARRAYSIZE 14
 #define UICONFIGVERSION 2
@@ -29,7 +34,11 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'n':'timerange','l':'Active time range', 't':'timerange'}]",
     
     // sensors
+    #ifdef DS18B20
     "[{'n':'temperature','l':'Temperature'},{'n':'exttemp','l':'Ext. temp'}]", // no 't' means, default:text, no 'l' means use 'n' as label
+    #else
+    "[{'n':'temperature','l':'Temperature'}]", // no 't' means, default:text, no 'l' means use 'n' as label
+    #endif
     "[ {'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'}]",
     "[{'n':'humidity'},{'n':'pressure'}]",    
     "[{'n':'photoresistor'}]",
@@ -107,6 +116,7 @@ String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, g
 
 // variable Inizialization
 double temperature = 99999 ; 
+double extTemperature = 99999 ;
 double humidity = 9999 ;
 double pressure = -1 ;
 int photoresistor = -1 ;
@@ -125,6 +135,7 @@ String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"tim
 
 // storage for last published values 
 double lastTemp = -999999 ;  
+float lastExtTemp = -99999 ;
 double lastHumi = -999999 ;
 double lastPressure = -99999 ;
 int lastPhotoRes = -999999 ;
@@ -164,6 +175,8 @@ int lastDay = 0 ;
 
 double temperatureMin = 9999 ;
 double temperatureMax = -9999 ;
+float extTempMin = 9999 ;
+float extTempMax = 9999 ;
 int humidityMin = 9999 ;
 int humidityMax = -9999 ;
 int pressureMin = 9999 ;
@@ -172,7 +185,7 @@ int lightMin = 9999 ;
 int lightMax = -9999 ;
 
 String stats = "{}" ;
-String stats_template = "{\"Temperature Min\":<temperatureMin>,\"Temperature Max\":<temperatureMax>,\"Humidity Min\":\"<humidityMin>\",\"Humidity Max\":\"<humidityMax>\",\"Pressure Min\":<pressureMin>,\"Pressure Max\":<pressureMax>,\"Light Min\":<lightMin>,\"Light Max\":<lightMax>,\"RelaisOn minutes today\":<relaisOnMinutesInLastDay>,\"RelaisOn minutes a day\":<relaisOnAverageMinutesPerDay>}" ;
+String stats_template = "{\"Temperature Min\":<temperatureMin>,\"Temperature Max\":<temperatureMax>,\"Ext Temperature Min\":<extTemperatureMin>,\"Ext Temperature Max\":<extTemperatureMax>,\"Humidity Min\":\"<humidityMin>\",\"Humidity Max\":\"<humidityMax>\",\"Pressure Min\":<pressureMin>,\"Pressure Max\":<pressureMax>,\"Light Min\":<lightMin>,\"Light Max\":<lightMax>,\"RelaisOn minutes today\":<relaisOnMinutesInLastDay>,\"RelaisOn minutes a day\":<relaisOnAverageMinutesPerDay>}" ;
 
 
 int workMessage(String message){
@@ -234,7 +247,9 @@ void setup(){
     
     sendDebug(0) ;
     
+    #ifdef DS18B20
     dallas.begin();
+    #endif
     
     preparePerMinuteTimeLine();
     
@@ -308,6 +323,19 @@ void loop(){
         Particle.publish("temperatureChanged", String(temperature), 60, PRIVATE);
     }
     
+    // external Temperature
+    float celsius = readCelsiusFromExternalSensor() ;
+    if (celsius != -127){ // no temp received
+        extTemperature = celsius ;
+    }
+
+    delta = lastExtTemp - extTemperature ;
+    if (delta < 0) delta = delta * -1 ;
+    if (delta >= tempDeltaEvent) {
+        lastExtTemp = extTemperature ;
+        Particle.publish("extTemperatureChanged", String(extTemperature), 60, PRIVATE);
+    }
+    
 
     humidity = humidityRead() ;
     delta = lastHumi - humidity ;
@@ -366,24 +394,22 @@ void loop(){
         unsigned long now = millis() ;
         unsigned long deltaT = (now - lastRelaisSetup)/1000 ;
         if (deltaT > 30){
+            lastRelaisSetup = now ;
             if (temperature < TempSetPoint || humidity < HumiSetPoint || pressure < PressureSetPoint || trimmer < TrimmerSetPoint || photoresistor < LightSetPoint) {
-                lastRelaisSetup = now ;
-                setRelaisOn() ;
+                setRelaisOn(false) ; // if the master switch is off don't set the relais to on
             } else {
-                lastRelaisSetup = now ;
                 setRelaisOff() ;
             }
         }        
     }
     
-    float celsius = readCelsiusFromExternalSensor() ;
-    
+
     status = String(status_template) ; // copying ;
 
     status.replace("<expiredate>",actualExpireDateIndex > -1 ? expireDates[actualExpireDateIndex] : "NO EXPIRE DATE");
     status.replace("<timerange>",actualTimeRangeIndex > -1 ? timeRanges[actualTimeRangeIndex] : "NO ACTIVE TIME RANGE");
     status.replace("<temperature>",String(temperature));
-    status.replace("<exttemp>",String(celsius)) ;
+    status.replace("<exttemp>",String(extTemperature)) ;
     status.replace("<humidity>",String(humidity));
     status.replace("<pressure>",String(pressure));
     status.replace("<photoresistor>",String(photoresistor));
@@ -409,6 +435,8 @@ void loop(){
         relaisOnAverageMinutesPerDay = (relaisOnAverageMinutesPerDay * relaisOnAveragePerDayCounter + relaisOnMinutesInLastDay) / (relaisOnAveragePerDayCounter + 1);
         relaisOnMinutesInLastDay = 0 ;
         
+        extTempMin = 9999 ;
+        extTempMax = -9999 ;
         temperatureMin = 9999 ;
         temperatureMax = -9999 ;
         humidityMin = 9999 ;
@@ -419,6 +447,8 @@ void loop(){
         lightMax = -9999 ;
     }
     
+    if (extTempMin > extTemperature) extTempMin = extTemperature ;
+    if (extTempMax < extTemperature) extTempMax = extTemperature ;
     if (temperatureMin > temperature) temperatureMin = temperature ;
     if (temperatureMax < temperature) temperatureMax = temperature ;
     if (humidityMin > humidity) humidityMin = humidity ;
@@ -435,6 +465,8 @@ void loop(){
     
     stats.replace("<temperatureMin>",String(temperatureMin));
     stats.replace("<temperatureMax>",String(temperatureMax));
+    stats.replace("<extTemperatureMin>",String(extTempMin));
+    stats.replace("<extTemperatureMax>",String(extTempMax));
     stats.replace("<humidityMin>",String(humidityMin));
     stats.replace("<humidityMax>",String(humidityMax));
     stats.replace("<pressureMin>",String(pressureMin));
@@ -858,9 +890,11 @@ int setalarm(String command){
 
 */
 
-void setRelaisOn(){
-    // master switch used to block releais
-    if (SWITCH==LOW) return ;
+void setRelaisOn(bool force){
+    // master switch used to block relais
+    if (!force){
+        if (switch0==LOW) return ;
+    }
     digitalWrite(RELAIS_SET, HIGH);
 }
 
@@ -881,7 +915,7 @@ int setrelais(String command){
     if (command.equalsIgnoreCase("on"))  {
         relaisIsInManualMode = 1 ;
         cmd = HIGH ;
-        setRelaisOn() ;
+        setRelaisOn(true) ;
     } else if (command.equalsIgnoreCase("off")){
         relaisIsInManualMode = 1 ;
         setRelaisOff() ;
@@ -890,7 +924,7 @@ int setrelais(String command){
     } else {
         relaisIsInManualMode = 1 ;
         cmd = command.toInt() ;
-        setRelaisOn() ;
+        setRelaisOn(true) ;
         delay(cmd) ;
         setRelaisOff() ;
         relaisIsInManualMode = 0 ;
@@ -908,7 +942,11 @@ int sendUIConfig(){
 }
 
 float readCelsiusFromExternalSensor(){
+    #ifdef DS18B20
     dallas.requestTemperatures();
     float celsius = dallas.getTempCByIndex( 0 );
+    #else
+    float celsius = -999 ;
+    #endif
     return celsius ;
 }
