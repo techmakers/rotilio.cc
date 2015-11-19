@@ -169,7 +169,7 @@ int debugVar = -1 ;
 // stats
 double relaisOnMinutesInLastDay = 0 ;
 double relaisOnAverageMinutesPerDay = 0 ;
-int relaisOnAveragePerDayCounter = 0;
+double relaisOnAveragePerDayCounter = 0;
 int lastDay = 0 ;
 
 double temperatureMin = 9999 ;
@@ -482,7 +482,7 @@ void loop(){
         relaisOnMinutesInLastDay = relaisOnMinutesInLastDay + double(LOOP_DELAY/1000.0/60.0) ;
     }
     
-    relaisOnAverageMinutesPerDay = (relaisOnAverageMinutesPerDay * relaisOnAveragePerDayCounter + relaisOnMinutesInLastDay) / double(relaisOnAveragePerDayCounter + 1.0);
+    relaisOnAverageMinutesPerDay = (relaisOnAverageMinutesPerDay * relaisOnAveragePerDayCounter + relaisOnMinutesInLastDay) / (relaisOnAveragePerDayCounter + 1.0);
     
     stats.replace("<temperatureMin>",String(temperatureMin));
     stats.replace("<temperatureMax>",String(temperatureMax));
