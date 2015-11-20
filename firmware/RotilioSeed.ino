@@ -1,5 +1,5 @@
 /*
-    Rotilio.cc firmware
+    Rotilio.cc firmware seed
     carlo@techmakers.io
 
 */
@@ -12,7 +12,7 @@
 #include "OneWire/OneWire.h"
 #include "Particle-BaroSensor/Particle-BaroSensor.h"
 
-#define UICONFIGARRAYSIZE 12
+#define UICONFIGARRAYSIZE 11
 #define UICONFIGVERSION 1
 
 String uiConfig[UICONFIGARRAYSIZE] = {
@@ -20,12 +20,13 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'t':'head','text':'General purpose application'}]",
     // sensors
     "[{'n':'temperature','l':'Temperature 1'},{'n':'exttemp','l':'Temperature 2'}]", // no 't' means, default:text, no 'l' means use 'n' as label
-    "[{'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'},{'n':'relais','t':'led','l':'Relais status'}]",
     "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",    
-    "[{'n':'photoresistor','l':'Light'}]",
-    "[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'},{'n':'switch','l':'Switch','t':'switch-readonly'}]", 
-    "[{'n':'relaisIsInManualMode','l':'Relais is manual','t':'switch'}]",
+    "[{'n':'photoresistor','l':'Light'},{'n':'trimmer','l':'Trimmer'}]",
+    "[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]", 
     // actions
+    
+    "[{'n':'relais','t':'led','l':'Relais status'},{'n':'switch','l':'Switch','t':'switch-readonly'}]",
+    
     "[{'t':'button','l':'Manual relais on','m':'setrelais:on'},{'t':'button','l':'Manual relais off','m':'setrelais:off'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
     "[{'t':'button','l':'Relais on for 1 second','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
     "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
@@ -49,7 +50,7 @@ String uiConfig[UICONFIGARRAYSIZE] = {
 
 #define TEMP_ADJUST_OFFSET  -0.7
 
-#define LOOP_DELAY          1000.0
+#define LOOP_DELAY      1000.0
 
 
 // variable Inizialization
@@ -66,7 +67,7 @@ int relais = false ;
 int alarm = 0 ;
 
 String status = "{}" ; 
-String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
+String status_template = "{\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
 
 // counter for debug function
 int l=0;
@@ -88,7 +89,7 @@ void setup(){
     
     pinMode(RELAIS_FDB,INPUT_PULLUP);  
     pinMode(BUTTON_1, INPUT_PULLUP);     
-    pinMode(BUTTON_2, INPUT_PU  LLUP);   
+    pinMode(BUTTON_2, INPUT_PULLUP);   
     pinMode(SWITCH, INPUT_PULLUP); 
     
     digitalWrite(BUZZER, LOW);
@@ -135,13 +136,6 @@ void loop(){
     status.replace("<button1>",String(button1));
     status.replace("<button2>",String(button2));
     status.replace("<alarm>",String(alarm));
-    status.replace("<temperaturesetpoint>",String(TempSetPoint));
-    status.replace("<humiditysetpoint>",String(HumiSetPoint));
-    status.replace("<pressuresetpoint>",String(PressureSetPoint));
-    status.replace("<trimmersetpoint>",String(TrimmerSetPoint));
-    status.replace("<photoresistorsetpoint>",String(LightSetPoint));
-    status.replace("<relaisIsInManualMode>",String(relaisIsInManualMode));
-    status.replace("<timerangeon>",String(timeRangeOn));
     
     delay(LOOP_DELAY); 
 }
@@ -194,7 +188,7 @@ double temperatureRead(void){
             int sot=(((int) msb<<8) + (int) lsb);       // crea variabile "raw data"
             accumulo=accumulo+sot;                      // la accumula per poi farne la media
         }
-    double res = ((175.72*(accumulo/SAMPLE_NUMBER))/655  36)-46.85;   // calcola la media e converte la lettura grezza in temperatura (gradi centigradi)
+    double res = ((175.72*(accumulo/SAMPLE_NUMBER))/65536)-46.85;   // calcola la media e converte la lettura grezza in temperatura (gradi centigradi)
     return round(res*10)/10 ;
 }
 
@@ -215,7 +209,7 @@ double humidityRead(void){
             accumulo=accumulo+sot;                      // la accumula per poi farne la media
         }
     
-    return ((125*(accumulo/SAMPLE_NUMBER))/655  36)-6;   // calcola la media e converte la lettura grezza in umidita' (% relativa)     
+    return ((125*(accumulo/SAMPLE_NUMBER))/65536)-6;   // calcola la media e converte la lettura grezza in umidita' (% relativa)     
 }
 
 int setalarm(String command){
