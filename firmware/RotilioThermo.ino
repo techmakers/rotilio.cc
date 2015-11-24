@@ -9,14 +9,15 @@
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
-#include "OneWire/OneWire.h"
-#include "Particle-BaroSensor/Particle-BaroSensor.h"
+
+#include "Particle_BaroSensor/Particle_BaroSensor.h"
 
 // Uncomment following line to activate DS18B20 external temperature sensor 
 //#define DS18B20
 
 #ifdef DS18B20
 #include "spark-dallas-temperature/spark-dallas-temperature.h"
+#include "OneWire/OneWire.h"
 DallasTemperature dallas(new OneWire(D7));
 #endif
 
@@ -33,7 +34,7 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     
     // sensors
     "[{'n':'temperature','l':'Temperature 1'},{'n':'exttemp','l':'Temperature 2'}]", // no 't' means, default:text, no 'l' means use 'n' as label
-    "[{'n':'temperaturesetpoint','step':1, 'min':-10,'max':30,'l':'Set temperature','t':'slider'},{'n':'relais','t':'led','l':'Relais status'}]",
+    "[{'n':'temperaturesetpoint','step':0.5, 'min':-10,'max':30,'l':'Set temperature','t':'slider'},{'n':'relais','t':'led','l':'Relais status'}]",
     "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",    
     "[{'n':'photoresistor','l':'Light'}]",
     //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'},{'n':'switch','l':'Switch','t':'switch-readonly'}]", 
@@ -54,14 +55,14 @@ String uiConfig[UICONFIGARRAYSIZE] = {
 #define TIMERANGEARRAYSIZE  8
 String timeRanges[TIMERANGEARRAYSIZE] = { 
     //"00:00-23:59|MTWTFSS|JFMAMJJASOND", // alwais on, alwais off is : 00:00-00:00|mtwtfss|jfmamjjasond
-    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=21", // working days morning
-    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=20",
-    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=21", // lunch time every day
-    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=20",
-    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=21", // dinner time every day
-    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=20", // sleeping time working days
-    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=20", // sleeping time weekend
-    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=21", // weekend morning
+    "0:06:00-07:30|sMTWTFs|JFmamjjasOND|T=20.5", // working days morning
+    "1:07:31-12:59|sMTWTFs|JFmamjjasOND|T=19.5",
+    "2:13:00-14:00|SMTWTFS|JFmamjjasOND|T=20.5", // lunch time every day
+    "3:14:01-18:59|SMTWTFS|JFmamjjasOND|T=19.5",
+    "4:19:00-22:00|SMTWTFS|JFmamjjasOND|T=20.5", // dinner time every day
+    "5:22:00-05:59|sMTWTFs|JFmamjjasOND|T=19.5", // sleeping time working days
+    "6:23:30-08:59|SmtwtfS|JFmamjjasOND|T=19.5", // sleeping time weekend
+    "7:09:00-10:00|SmtwtfS|JFmamjjasOND|T=20.5", // weekend morning
 };
 
 String expireDates[TIMERANGEARRAYSIZE] = {
@@ -104,8 +105,8 @@ String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, g
 #define tempDeltaEvent      0.2
 #define humiDeltaEvent      1
 #define pressureDeltaEvent  1
-#define photoDeltaEvent     200
-#define trimmerDeltaEvent   100
+#define photoDeltaEvent     50
+#define trimmerDeltaEvent   50
 
 #define RELAIS_MIN_PERIOD   60
 #define TEMP_ADJUST_OFFSET  -0.7
@@ -114,6 +115,8 @@ String api_help = "setrelais:on|off|auto|<msec on>, setalarm:<beeps>, auto:on, g
 
 
 // variable Inizialization
+int temperatureSampleCount = 0 ;
+double temperatureSampleAcc = 0 ;
 double temperature = 99999 ; 
 double extTemperature = 99999 ;
 int humidity = 9999 ;
@@ -128,7 +131,7 @@ int alarm = 0 ;
 int actualTimeRangeIndex = -1 ;
 int actualExpireDateIndex = -1 ;
 
-String status = "{}" ; 
+String status = "{}" ;
 String status_template = "{\"relaisIsInManualMode\":<relaisIsInManualMode>,\"timerangeon\":<timerangeon>,\"timerange\":\"<timerange>\",\"expiredate\":\"<expiredate>\",\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>,\"temperaturesetpoint\":<temperaturesetpoint>,\"humiditysetpoint\":<humiditysetpoint>,\"pressuresetpoint\":<pressuresetpoint>,\"trimmersetpoint\":<trimmersetpoint>,\"photoresistorsetpoint\":<photoresistorsetpoint>}" ;
 
 
@@ -148,6 +151,13 @@ int HumiSetPoint = -1 ;
 int PressureSetPoint = -1 ;
 int TrimmerSetPoint = -1 ;
 int LightSetPoint = -1 ;
+
+float TempSetPoint_prev = -271 ;
+int HumiSetPoint_prev = -1 ;
+int PressureSetPoint_prev = -1 ;
+int TrimmerSetPoint_prev = -1 ;
+int LightSetPoint_prev = -1 ;
+
 
 // counter for debug function
 int l=0;
@@ -207,30 +217,42 @@ int workMessage(String message){
         
     } else if (command.equalsIgnoreCase("temperaturesetpoint")){
         TempSetPoint = argument.toFloat();
+        if (TempSetPoint != TempSetPoint_prev) sendVariableChanged("temperaturesetpoint",String(TempSetPoint)) ;
+        TempSetPoint_prev = TempSetPoint ;
         return 0;
         
     } else if (command.equalsIgnoreCase("humiditysetpoint")){
         HumiSetPoint = argument.toFloat();
+        if (HumiSetPoint != HumiSetPoint_prev) sendVariableChanged("humiditysetpoint",String(HumiSetPoint)) ;
+        HumiSetPoint_prev = HumiSetPoint ;
         return 0;
         
     } else if (command.equalsIgnoreCase("pressuresetpoint")){
         PressureSetPoint = argument.toFloat();
+        if (PressureSetPoint != PressureSetPoint_prev) sendVariableChanged("pressuresetpoint",String(PressureSetPoint)) ;
+        PressureSetPoint_prev = PressureSetPoint ;
         return 0;
         
     } else if (command.equalsIgnoreCase("trimmersetpoint")){
         TrimmerSetPoint = argument.toFloat();
+        if (TrimmerSetPoint != TrimmerSetPoint_prev) sendVariableChanged("trimmersetpoint",String(TrimmerSetPoint)) ;
+        TrimmerSetPoint_prev = TrimmerSetPoint ;
         return 0;
         
     } else if (command.equalsIgnoreCase("photoresistorsetpoint")){
         LightSetPoint = argument.toFloat();
+        if (LightSetPoint != LightSetPoint_prev) sendVariableChanged("photoresistorsetpoint",String(LightSetPoint)) ;
+        LightSetPoint_prev = LightSetPoint ;
         return 0;
         
     } else if (command.equalsIgnoreCase("timerangeon")){
         timeRangeOn = argument.toInt();
+        sendVariableChanged("timerangeon",String(timeRangeOn)) ;
         return 0;
         
     } else if (command.equalsIgnoreCase("relaisIsInManualMode")){
         relaisIsInManualMode = argument.toInt();
+        sendVariableChanged("relaisIsInManualMode",String(relaisIsInManualMode)) ;
         return 0;
         
     } else if (command.equalsIgnoreCase("reset")){
@@ -291,19 +313,15 @@ void loop(){
     
     actualTimeRangeIndex = getTimeRangeForNow();
     if (actualTimeRangeIndex != lastTimeRangeIndex){
-        if (actualTimeRangeIndex > -1){
-            String actualTimeRange = timeRanges[actualTimeRangeIndex] ;
-            Particle.publish("timeRangeEntered",actualTimeRange,60,PRIVATE) ;
-        }
+        String actualTimeRange = actualTimeRangeIndex > -1 ? timeRanges[actualTimeRangeIndex] : "NO ACTIVE TIME RANGE" ;
+        sendVariableChanged("timerange",actualTimeRange) ;
         lastTimeRangeIndex = actualTimeRangeIndex ;
     }
 
     actualExpireDateIndex = getExpireDateForNow();
-    if (actualExpireDateIndex != lastTimeRangeIndex){
-        if (actualExpireDateIndex > -1){
-            String actualExpireDate = expireDates[actualExpireDateIndex] ;
-            Particle.publish("expireDateEntered",actualExpireDate,60,PRIVATE) ;
-        }
+    if (actualExpireDateIndex != lastExpireDateIndex){
+        String actualExpireDate = actualExpireDateIndex > -1 ? expireDates[actualExpireDateIndex] : "NO EXPIRE DATE" ;
+        sendVariableChanged("expiredate",actualExpireDate) ;
         lastExpireDateIndex = actualExpireDateIndex ;
     }
     
@@ -315,21 +333,27 @@ void loop(){
     }
     
     double delta = 0;
-    
-    temperature = temperatureRead() + TEMP_ADJUST_OFFSET;
+    // mean temperature over 20 samples (20 seconds if loop is of one second)
+    temperatureSampleCount++ ;
+    if (temperatureSampleCount > 20) {
+        temperatureSampleCount = 1 ;
+        temperatureSampleAcc = 0 ;
+    }
+    temperatureSampleAcc += temperatureRead() + TEMP_ADJUST_OFFSET ;
+    temperature = round(temperatureSampleAcc / temperatureSampleCount * 10.0)/10.0 ;
     delta = lastTemp - temperature ;
     if (delta < 0) delta = delta * -1 ;
     if (delta >= tempDeltaEvent) {
         lastTemp = temperature ;
-        Particle.publish("temperatureChanged", String(temperature), 60, PRIVATE);
+        sendVariableChanged("temperature",String(temperature)) ;
     }
     
-    pressure = round((double)BaroSensor.getPressure(OSR_8192)*10)/10 ;
+    pressure = round(BaroSensor.getPressure(OSR_8192)*10.0)/10.0 ;
     delta = lastPressure - pressure ;
     if (delta < 0) delta = delta * -1 ;
     if (delta >= pressureDeltaEvent){
         lastPressure = pressure ;
-        Particle.publish("pressureChanged", String(pressure), 60, PRIVATE) ;
+        sendVariableChanged("pressure",String(pressure)) ;
     }
     
     // external Temperature
@@ -348,7 +372,7 @@ void loop(){
     if (delta < 0) delta = delta * -1 ;
     if (delta >= tempDeltaEvent) {
         lastExtTemp = extTemperature ;
-        Particle.publish("extTemperatureChanged", String(extTemperature), 60, PRIVATE);
+        sendVariableChanged("extTemperature",String(extTemperature)) ;
     }
     
 
@@ -356,30 +380,30 @@ void loop(){
     delta = lastHumi - humidity ;
     if (abs(delta) > humiDeltaEvent) {
         lastHumi = humidity ;
-        Particle.publish("humidityChanged", String(humidity), 60, PRIVATE);
+        sendVariableChanged("humidity",String(humidity)) ;
     }
     
 
     photoresistor = analogRead(A1) ;
     if (abs(lastPhotoRes - photoresistor) >= photoDeltaEvent) {
         lastPhotoRes = photoresistor;
-        Particle.publish("photoresistChanged", String(photoresistor), 60, PRIVATE);
+        sendVariableChanged("photoresistor",String(photoresistor)) ;
     }
     
     
     trimmer = analogRead(A2) ;
     if (abs(lastTrimmer - trimmer) >= trimmerDeltaEvent) {
         lastTrimmer = trimmer;
-        Particle.publish("trimmerChanged", String(trimmer), 60, PRIVATE);
+        sendVariableChanged("trimmer",String(trimmer)) ;
     }
     
     int lastSwitch = switch0 ;
     switch0 = digitalRead(SWITCH) == HIGH ;
-    if (lastSwitch != switch0) Particle.publish("switchChanged", switch0 ? "true" : "false", 60, PRIVATE);
+    if (lastSwitch != switch0) sendVariableChanged("switch", switch0 ? "1" : "0") ;
     
     int lastRelais = relais ;
     relais = digitalRead(RELAIS_FDB) == HIGH ;
-    if (lastRelais != relais) Particle.publish("relaisChanged", relais ? "true" : "false", 60, PRIVATE);
+    if (lastRelais != relais) sendVariableChanged("relais", relais ? "1" : "0") ;
     
 
     //if(digitalRead(SWITCH)==LOW) sound(500,340) ;
@@ -387,13 +411,13 @@ void loop(){
     if (digitalRead(PULSANTE_1)==LOW){
         sound(1000,170) ;
         button1 = !button1 ;
-        Particle.publish("button1Changed", button1 ? "true" : "false", 60, PRIVATE);
+        sendVariableChanged("button1", button1 ? "1" : "0");
     }
     
     if (digitalRead(PULSANTE_2)==LOW){
         sound(1000,170) ;
         button2 = !button2 ;
-        Particle.publish("button2Changed", button2 ? "true" : "false", 60, PRIVATE);
+        sendVariableChanged("button2", button2 ? "1" : "0");
     }
     
     if (actualExpireDateIndex > -1){
@@ -445,6 +469,7 @@ void loop(){
     status.replace("<photoresistorsetpoint>",String(LightSetPoint));
     status.replace("<relaisIsInManualMode>",String(relaisIsInManualMode));
     status.replace("<timerangeon>",String(timeRangeOn));
+
     
     stats = String(stats_template);
     
@@ -760,26 +785,36 @@ void workTimeRange(){
         
         case 'T': { // temp
             TempSetPoint = actualTimeRange.substring(37).toFloat() ;
+            if (TempSetPoint != TempSetPoint_prev) sendVariableChanged("temperaturesetpoint",String(TempSetPoint)) ;
+            TempSetPoint_prev = TempSetPoint ;
             break;
         }
         
         case 'H': { // humidity
             HumiSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (HumiSetPoint != HumiSetPoint_prev) sendVariableChanged("humiditysetpoint",String(HumiSetPoint)) ;
+            HumiSetPoint_prev = HumiSetPoint ;
             break;
         }
         
         case 'P': { // pressure
             PressureSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (PressureSetPoint != PressureSetPoint_prev) sendVariableChanged("pressuresetpoint",String(PressureSetPoint)) ;
+            PressureSetPoint_prev = PressureSetPoint ;
             break;
         }
 
         case 'R': { // trimmer
             TrimmerSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (TrimmerSetPoint != TrimmerSetPoint_prev) sendVariableChanged("trimmersetpoint",String(TrimmerSetPoint)) ;
+            TrimmerSetPoint_prev = TrimmerSetPoint ;
             break;
         }
 
         case 'L': { // PhotoResistor
             LightSetPoint = actualTimeRange.substring(37).toInt() ;
+            if (LightSetPoint != LightSetPoint_prev) sendVariableChanged("photoresistorsetpoint",String(LightSetPoint)) ;
+            LightSetPoint_prev = LightSetPoint ;
             break;
         }
         
@@ -898,6 +933,7 @@ double humidityRead(void){
 
 int setalarm(String command){
     alarm = command.toInt();
+    sendVariableChanged("alarm",String(alarm)) ;
     return alarm ;
 }
 
@@ -950,6 +986,7 @@ int setrelais(String command){
         setRelaisOff() ;
         relaisIsInManualMode = 0 ;
     }
+    sendVariableChanged("relaisIsInManualMode",String(relaisIsInManualMode));
     return cmd ;
 }
 
@@ -970,4 +1007,8 @@ float readCelsiusFromExternalSensor(){
     float celsius = -999 ;
     #endif
     return celsius ;
+}
+
+void sendVariableChanged(String name, String value){
+    Particle.publish("variableChanged",name+":"+value,60,PRIVATE) ;
 }

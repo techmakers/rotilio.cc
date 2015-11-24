@@ -9,6 +9,14 @@ var ParticleAdapter = function(httpAdapter){
 
     return {
 
+        getDeviceList : function(access_token,onSuccessCb,onErrorCb){
+            var url = "https://api.particle.io/v1/devices/?access_token=:access_token"
+                .replace(":access_token", access_token);
+
+            var req = {method: 'GET', url: url} ;
+            httpAdapter(req).then(onSuccessCb, onErrorCb);
+        },
+
         getDeviceInfo : function(device, access_token, onSuccessCb,onErrorCb){
             // GET /v1/devices/:deviceId
             var url = "https://api.particle.io/v1/devices/:deviceId/?access_token=:access_token"

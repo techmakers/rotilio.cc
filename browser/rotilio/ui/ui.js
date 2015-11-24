@@ -9,8 +9,8 @@ angular.module('myApp.ui', ['ngRoute'])
   });
 }])
 
-.controller('UiCtrl', ['$scope','$timeout','$interval','$location','$http','utils',
-        function($scope,$timeout,$interval,$location,$http,utils) {
+.controller('UiCtrl', ['$scope','$timeout','$interval','$location','$http','utils','$rootScope',
+        function($scope,$timeout,$interval,$location,$http,utils,$rootScope) {
 
             var myParticleAdapter = new ParticleAdapter($http) ;
 
@@ -23,6 +23,8 @@ angular.module('myApp.ui', ['ngRoute'])
             var savedState = $location.search();
             $scope.device = savedState.deviceid;
             $scope.access_token = savedState.access_token;
+
+            $rootScope.access_token = $scope.access_token ;
 
             $scope.uiElementsValue = {} ;
 
@@ -78,6 +80,28 @@ angular.module('myApp.ui', ['ngRoute'])
 
 
             $scope.eventSourceTriggers = {
+                "variableChanged":function(e){
+                    console.log("variableChanged", e.data) ;
+                    var data = JSON.parse(e.data).data ;
+                    var components = data.split(":") ;
+                    var varname = components[0] ;
+                    components.splice(0,1) ;
+                    var varvalue = components.join(":") ;
+                    if (!isNaN(varvalue)) varvalue = varvalue*1 ;
+                    $scope.uiElements.forEach(function(uiElementRow){
+                        uiElementRow.forEach(function(uiElement){
+                            if (uiElement.n == varname){
+                                if (uiElement.value != varvalue){
+                                    uiElement.changed = true ;
+                                    uiElement.value = varvalue ;
+                                    $timeout(function(){
+                                        uiElement.changed = false ;
+                                    },3000) ;
+                                }
+                            }
+                        }) ;
+                    }) ;
+                },
                 "uiConfig" : function(e){
                     //console.log('uiConfig',e) ;
                     // data: "{"data":"{0:[{'n':'status.temperature','l':'Temperature'}, {'n':'status.temperaturesetpoint','min':-10,'max':30,'l':'Set temp:','t':'slider'}]}","ttl":"60","published_at":"2015-11-08T20:54:01.811Z","coreid":"30001c000647343232363230"}"
@@ -105,6 +129,9 @@ angular.module('myApp.ui', ['ngRoute'])
                             uiElement.value = $scope.uiElementsValue[uiElement.n] ;
                         }
                     });
+                },
+                "debugmsg": function(e){
+                    $scope.debugmsg = e ;
                 }
             } ;
 
@@ -286,7 +313,6 @@ angular.module('myApp.ui', ['ngRoute'])
 
 
             $interval(function(){
-                $scope.readStatusVariable() ;
                 $scope.readStatsVariable();
             },10000) ;
 

@@ -9,8 +9,29 @@ angular.module('myApp.home', ['ngRoute'])
         });
     }])
 
-    .controller('HomeCtrl', ['$scope', '$timeout', '$interval', '$location', '$rootScope', 'utils',
-        function ($scope, $timeout, $interval, $location, $rootScope, utils) {
+    .controller('HomeCtrl', ['$scope', '$timeout', '$interval', '$location', '$rootScope', 'utils','$http',
+        function ($scope, $timeout, $interval, $location, $rootScope, utils,$http) {
+
+            var myParticleAdapter = new ParticleAdapter($http) ;
+
+            function listDevices(cb){
+                $scope.devices = [];
+                myParticleAdapter.getDeviceList(
+                    $scope.access_token,
+                    function(okResponse){
+                        $scope.devices = okResponse.data;
+                        $scope.devices.sort(function(a,b){
+                            if (a.name.toUpperCase() < b.name.toUpperCase()) return -1 ;
+                            return 1 ;
+                        });
+                        cb() ;
+                    },
+                    function(nokResponse){
+                        console.log(nokResponse) ;
+                        cb(nokResponse) ;
+                    }
+                ) ;
+            }
 
             function showLogin() {
                 if ($rootScope.showedLogin) return;
@@ -22,22 +43,12 @@ angular.module('myApp.home', ['ngRoute'])
                     $rootScope.access_token = data.access_token;
                     $location.search("access_token", data.access_token);
                     utils.ajaxindicatorstart("Fetching your devices from Particle cloud...");
-                    rotilio.listDevices(function (err) {
+                    listDevices(function (err) {
                         if (err) console.log(err);
                         utils.ajaxindicatorstop();
                     });
                 });
             }
-
-            $scope.devices = [];
-            var rotilio = new rotiliocc({
-                refreshVariablePeriod: 0, // no refresh needed
-                deviceAdded: function (device) {
-                    $timeout(function () {
-                        $scope.devices.push(device);
-                    }, 0)
-                }
-            });
 
             var savedState = $location.search();
             $scope.access_token = savedState.access_token;
@@ -53,7 +64,7 @@ angular.module('myApp.home', ['ngRoute'])
                         showLogin();
                     }
                     utils.ajaxindicatorstart("Fetching your devices from Particle cloud...");
-                    rotilio.listDevices(function (err) {
+                    listDevices(function (err) {
                         if (err) console.log(err);
                         utils.ajaxindicatorstop();
                     });
