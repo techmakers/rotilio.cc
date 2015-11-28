@@ -34,11 +34,13 @@
 </head>
 <body>
 <div class="container text-dynamic">
-    <ul class="menu">
+
+    <ul style="margin-top:10px" class="menu">
+        <li><a target="_blank" href="http://techmakers.io"><img style="height: 32px" src="./img/techmakersLogo100.png"></a></li>
         <li><a href="#/home?access_token={{access_token}}">ListDevices</a></li>
         <!--<li><a href="#/device">Device</a></li>-->
     </ul>
-
+    <p class="text-center">Rotilio user interface, your devices listed here</p>
     <!--[if lt IE 7]>
     <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade
         your browser</a> to improve your experience.</p>
@@ -46,7 +48,7 @@
 
     <div ng-view></div>
     <br/>
-    <div class="text-center">Rotilio.cc seed app: v<span app-version></span></div>
+    <div class="text-center">Rotilio.cc seed app: v<span app-version></span> sources at: <a href="https://github.com/techmakers/rotilio.cc" alt="GitHub"><img style="height:32px" src="./img/GitHub-Mark-64px.png"</a></div>
 </div>
 <!-- In production use:
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/x.x.x/angular.min.js"></script>
