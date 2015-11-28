@@ -1,11 +1,10 @@
 <div class="text-center" _style="display:inline" id="spark-login" ></div>
 <br/>
 <div>
-  <form class="form-horizontal">
-    <div class="form-group">
-      <label for="searchText" style="text-align:left" class="col-md-1 control-label">Filter:</label>
-      <div class="col-md-3">
-        <input name="searchText" type="text" class="form-control" ng-model="searchText" placeholder="">
+  <form class="form-horizontal" ng-show="devices.length>0">
+    <div class=" form-group">
+      <div class="">
+        <input name="searchText" type="text" class="form-control" ng-model="searchText" placeholder="filter devices">
       </div>
     </div>
   </form>
