@@ -1,23 +1,13 @@
-## Techmakers
-
-Techmakers costruisce hardware e software per l'internet delle cose.
-
-Se vuoi realizzare oggetti interattivi e connessi sei nel posto giusto.
-
-Con noi puoi realizzare prototipi ma anche versioni commerciali, supportato in tutto il ciclo di vita della tua idea. 
-
-Anche quando avrai migliaia di dispositivi installati, potrai aggiornarli e gestirli da remoto.
-
-La nostra piattaforma, composta da hardware e software perfettamente integrati tra loro, costituisce un ottimo punto di partenza per ogni tuo progetto. 
-
-Sappiamo che quando si intraprende un viaggio nello sviluppo di una nuova idea è bello essere affiancati da compagni di viaggio discreti ma pronti a dare una mano quando serve. 
-Noi e la nostra comunità di partner certificati possiamo essere quella mano utile per suggerimenti, analisi di soluzioni, test e anche co-progettazione.
-
-
 ## Rotilio
 
-"Considerate sempre gli errori come parte del processo. Non potete evitarli ma potete usarli a vostro vantaggio" - Alessio Ricco esperto di Co-Design
+![Rotilio, piattaforma IoT hw e sw open source](./images/tm_rotilio.jpg "Rotilio")
 
+Piattaforma IoT hardware e software open source per makers, architetti, ingegneri e sviluppatori.
+Basato sullo standard di programmazione Arduino, connesso al cloud, subito pronto ad interagire con App e l'ambiente che lo circonda.
+
+```
+"Considerate sempre gli errori come parte del processo. Non potete evitarli ma potete usarli a vostro vantaggio" - Alessio Ricco esperto di Co-Design
+```
 
 Quando abbiamo scoperto Arduino, siamo rimasti colpiti dalla semplicità con cui si possano realizzare prototipi e installazioni, ma spingendoci oltre, e volendo ingegnarizzare la soluzione in un prodotto nostro (il classico termostato comandato da un App :-) )  ci siamo scontrati con diversi problemi: costi, dimensioni, consumo della batteria, connettività.
 
@@ -124,8 +114,21 @@ Alcune idee per makers:
 - API di programmazione via HTTP, Javascript, Android, iOS
 - Open source
 
-## HANDS ON
+## Techmakers
 
-E' possibile organizzare giornate di formazione per chi volesse entrare nel merito della programmazione o evoluzione hardware di Rotilio.
-Ti possiamo far toccare con mano quanto sia semplice interagire con l'hardware e comandare motori, serrature, valvole, pompe, luci o tutto quello che ti venga in mente.
+Techmakers costruisce hardware e software per l'internet delle cose.
 
+Se vuoi realizzare oggetti interattivi e connessi sei nel posto giusto.
+
+Con noi puoi realizzare prototipi ma anche versioni commerciali, supportato in tutto il ciclo di vita della tua idea. 
+
+Anche quando avrai migliaia di dispositivi installati, potrai aggiornarli e gestirli da remoto.
+
+La nostra piattaforma, composta da hardware e software perfettamente integrati tra loro, costituisce un ottimo punto di partenza per ogni tuo progetto. 
+
+Sappiamo che quando si intraprende un viaggio nello sviluppo di una nuova idea è bello essere affiancati da compagni di viaggio discreti ma pronti a dare una mano quando serve. 
+Noi e la nostra comunità di partner certificati possiamo essere quella mano utile per suggerimenti, analisi di soluzioni, test e anche co-progettazione.
+
+## Per saperne di più
+
+Visita il nostro sito: [http://techmakers.io]()
