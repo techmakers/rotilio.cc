@@ -1,4 +1,4 @@
-#include "Particle_BaroSensor/Particle_BaroSensor.h"
+#include "Particle_BaroSensor.h"
 
 void setup(){
 
@@ -9,18 +9,18 @@ void setup(){
 	}
 	Serial.println("run...") ;
 	BaroSensor.begin();
-	
+
 }
 
 void loop(){
-    
+
 	float pressure = BaroSensor.getPressure(OSR_8192) ;
 	float temperature = BaroSensor.getTemperature(CELSIUS) ;
 	Serial.print("Pressure:");
 	Serial.println(pressure) ;
 	Serial.print("Temperature:");
 	Serial.println(temperature) ;
-	
+
 	BaroSensor.dumpDebugOutput() ;
 	delay(5000) ;
 }
