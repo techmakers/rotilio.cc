@@ -32,11 +32,11 @@ Rotilio è hardware e software OPEN SOURCE, per questo potrai essere tu o un tuo
 
 Tutto è pronto anche per la distribuzione e l'installazione sul campo, procedure di setup, aggiornamenti firmware, dashboard di controllo.
 
-Il cuore di Rotilio è il microcontrollore WiFi Particle Photon [http://particle.io](), ma è predisposto anche per accogliere il Particle Electron, per connettività GPRS o 3G.
+Il cuore di Rotilio è il microcontrollore WiFi Particle Photon [http://particle.io](http://particle.io), ma è predisposto anche per accogliere il Particle Electron, per connettività GPRS o 3G.
 
 L'intelligenza è costituita dal firmware che abbiamo scritto appositamente per rendere semplice e accessibile tutto questo.
 
-L'interfaccia WEB standard è disponibile a questo indirizzo: [http://techmakers.io/rotilio]()
+L'interfaccia WEB standard è disponibile a questo indirizzo: [https://rotilio.cc](https://rotilio.cc)
 
 ## Applicazioni
 
@@ -101,7 +101,7 @@ Alcune idee per makers:
 - Batteria tampone per stand-by
 - Pettine espansione I/O Digitale e Analogico
 - Pettine espansione sensori di bordo
-- Connettore per Particle Photon o Particle Electron [http://particle.io]()
+- Connettore per Particle Photon o Particle Electron [http://particle.io](http://particle.io)
 
 ### Caratteristiche
 
@@ -132,4 +132,4 @@ Noi e la nostra comunità di partner certificati possiamo essere quella mano uti
 
 ## Per saperne di più
 
-Visita il nostro sito: [http://techmakers.io]()
+Visita il nostro sito: [http://techmakers.io](http://techmakers.io)
