@@ -6,7 +6,8 @@ Piattaforma IoT hardware e software open source per makers, architetti, ingegner
 Basato sullo standard di programmazione Arduino, connesso al cloud, subito pronto ad interagire con App e l'ambiente che lo circonda.
 
 ```
-"Considerate sempre gli errori come parte del processo. Non potete evitarli ma potete usarli a vostro vantaggio" - Alessio Ricco esperto di Co-Design
+"Considerate sempre gli errori come parte del processo. Non potete evitarli ma potete usarli a vostro vantaggio" 
+- Alessio Ricco esperto di Co-Design
 ```
 
 Quando abbiamo scoperto Arduino, siamo rimasti colpiti dalla semplicità con cui si possano realizzare prototipi e installazioni, ma spingendoci oltre, e volendo ingegnarizzare la soluzione in un prodotto nostro (il classico termostato comandato da un App :-) )  ci siamo scontrati con diversi problemi: costi, dimensioni, consumo della batteria, connettività.
