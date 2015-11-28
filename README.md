@@ -10,7 +10,7 @@ Basato sullo standard di programmazione Arduino, connesso al cloud, subito pront
 - Alessio Ricco esperto di Co-Design
 ```
 
-Quando abbiamo scoperto Arduino, siamo rimasti colpiti dalla semplicità con cui si possano realizzare prototipi e installazioni, ma spingendoci oltre, e volendo ingegnarizzare la soluzione in un prodotto nostro (il classico termostato comandato da un App :-) )  ci siamo scontrati con diversi problemi: costi, dimensioni, consumo della batteria, connettività.
+Quando abbiamo scoperto Arduino, siamo rimasti colpiti dalla semplicità con cui si possano realizzare prototipi e installazioni, ma spingendoci oltre, e volendo ingegnerizzare la soluzione in un prodotto nostro (il classico termostato comandato da un App :-) )  ci siamo scontrati con diversi problemi: costi, dimensioni, consumo della batteria, connettività.
 
 Abbiamo passato qualche tempo a cercare soluzioni, ma nulla di fatto.
 
