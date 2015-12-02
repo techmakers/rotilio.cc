@@ -1,4 +1,16 @@
-<div class="text-center" _style="display:inline" id="spark-login" ></div>
+<div ng-show="!devices" class="text-center">
+  <img style="height:300px" src="./img/tm_rotilio.jpg">
+</div>
+
+<div ng-show="devices" class="text-center">
+  <img style="height:100px"  src="./img/tm_rotilio.jpg">
+</div>
+
+<p class="text-center">Rotilio user interface, your devices listed here</p>
+
+
+
+<div  class="text-center" _style="display:inline" id="spark-login" ></div>
 <br/>
 <div>
   <form class="form-horizontal" ng-show="devices.length>0">
@@ -9,6 +21,7 @@
     </div>
   </form>
 </div>
+
 <table class="table table-condensed table-striped">
   <tbody>
     <tr ng-repeat="device in devices | filter:filterDevices">
