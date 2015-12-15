@@ -1,6 +1,6 @@
--> ![techmkares.io](./immagini/techmakerslogo100.png "Techmakers") <-
+![techmkares.io](./immagini/techmakersLogo100.png "Techmakers")
 
--> techmakers.io <-
+techmakers.io
 
 ===================
 
