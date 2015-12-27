@@ -63,8 +63,15 @@
             <div style="margin-top:10px" class="" ng-if="uiElement.t == 'button'">
                 <button class="btn btn-{{uiElement.color}} btn-block" ng-click="buttonClick(uiElement)" >{{uiElement.l}}</button>
             </div>
+            <div style="margin-top:10px" class="" ng-if="uiElement.t == 'barchart'">
+                <canvas width="400" height="100" id="{{uiElement.n}}" class="" ng-click="barClick(uiElement)" ></canvas>
+            </div>
+            <div style="margin-top:10px" class="" ng-if="uiElement.t == 'piechart'">
+                <canvas width="400" height="100" id="{{uiElement.n}}" class="" ng-click="barClick(uiElement)" ></canvas>
+            </div>
         </div>
     </div>
+
 
     <div ng-repeat="(key,stat) in stats">
         <div style="margin-top:10px" class="row border-large">

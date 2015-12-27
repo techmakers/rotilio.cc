@@ -88,6 +88,8 @@ angular.module('myApp.ui', ['ngRoute'])
                     components.splice(0,1) ;
                     var varvalue = components.join(":") ;
                     if (!isNaN(varvalue)) varvalue = varvalue*1 ;
+
+                    // updates elements...
                     $scope.uiElements.forEach(function(uiElementRow){
                         uiElementRow.forEach(function(uiElement){
                             if (uiElement.n == varname){
@@ -101,6 +103,8 @@ angular.module('myApp.ui', ['ngRoute'])
                             }
                         }) ;
                     }) ;
+
+                    $scope.updateCharts(varname,varvalue) ;
                 },
                 "uiConfig" : function(e){
                     //console.log('uiConfig',e) ;
@@ -125,15 +129,98 @@ angular.module('myApp.ui', ['ngRoute'])
                         if (uiElement.t == 'button'){
                             if (!uiElement.color) uiElement.color = "primary" ;
                         }
-                        if ($scope.uiElementsValue[uiElement.n]){
-                            uiElement.value = $scope.uiElementsValue[uiElement.n] ;
+
+                        if (uiElement.t == 'barchart'){
+                            $timeout(function(){
+                                drawBarChart(uiElement);
+                            },1000);
+                        } else if (uiElement.t == 'piechart'){
+                            $timeout(function(){
+                                drawPieChart(uiElement);
+                            },1000);
+                        } else {
+                            if ($scope.uiElementsValue[uiElement.n]){
+                                uiElement.value = $scope.uiElementsValue[uiElement.n] ;
+                            }
                         }
                     });
+
+                    function drawBarChart(uiElement){
+                        var data = {
+                            labels: uiElement.names,
+                            datasets: [
+                                {
+                                    label: uiElement.l,
+                                    fillColor: "rgba(220,220,220,0.5)",
+                                    strokeColor: "rgba(220,220,220,0.8)",
+                                    highlightFill: "rgba(220,220,220,0.75)",
+                                    highlightStroke: "rgba(220,220,220,1)",
+                                    data: []
+                                }
+                            ]
+                        };
+                        uiElement.names.forEach(function(name){
+                            if ($scope.uiElementsValue[name]){
+                                data.datasets[0].data.push($scope.uiElementsValue[name]) ;
+                            }
+                        }) ;
+                        var width = $("#"+uiElement.n).parent().width();
+                        var height = width ;
+                        if (height > 400) height = 400;
+                        $("#"+uiElement.n).attr("width",width).attr("height",height) ;
+                        var ctx = document.getElementById(uiElement.n).getContext("2d");
+                        uiElement.barchart = new Chart(ctx).Bar(data);
+                    }
+
+                    function drawPieChart(uiElement){
+                        uiElement.data = [] ;
+                        uiElement.names = [] ;
+                        uiElement.segments.forEach(function(segment){
+                            uiElement.names.push(segment.n) ;
+                            uiElement.data.push({
+                                value: $scope.uiElementsValue[segment.n] ? $scope.uiElementsValue[segment.n] : 0,
+                                color:segment.c,
+                                highlight: segment.h,
+                                label: segment.l
+                            }) ;
+                        }) ;
+                        var width = $("#"+uiElement.n).parent().width();
+                        var height = width ;
+                        if (height > 400) height = 400;
+                        $("#"+uiElement.n).attr("width",width).attr("height",height) ;
+                        var ctx = document.getElementById(uiElement.n).getContext("2d");
+                        uiElement.piechart = new Chart(ctx).Doughnut(uiElement.data);
+                    }
                 },
                 "debugmsg": function(e){
                     $scope.debugmsg = e ;
                 }
             } ;
+
+
+            $scope.updateCharts = function(varname,varvalue){
+                // update some charts...
+                $scope.uiElements.forEach(function(uiElementRow){
+                    uiElementRow.forEach(function(uiElement){
+                        if (uiElement.t == 'barchart'){
+                            if (!uiElement.barchart) return ;
+                            var chartLabel = uiElement.names.indexOf(varname) ;
+                            if (chartLabel > -1){
+                                uiElement.barchart.datasets[0].bars[chartLabel].value = varvalue ;
+                                if (uiElement.barchart.update) uiElement.barchart.update();
+                            }
+                        } else if (uiElement.t == 'piechart'){
+                            if (!uiElement.data) return ;
+                            uiElement.data.forEach(function(segment,i){
+                                if (uiElement.names[i] == varname){
+                                    uiElement.piechart.segments[i].value = varvalue ;
+                                    if (uiElement.piechart.update) uiElement.piechart.update() ;
+                                }
+                            }) ;
+                        }
+                    });
+                });
+            }
 
             // we will receive ui configuration elements via "publish" from the device itself
             $scope.eventSource = myParticleAdapter.subscribeToEvents($scope.device,$scope.access_token,$scope.eventSourceTriggers) ;
@@ -162,16 +249,19 @@ angular.module('myApp.ui', ['ngRoute'])
                         }
                         $scope.uiElements.forEach(function(uiElementRow){
                             uiElementRow.forEach(function(uiElement){
+                                if (!uiElement.n) return ;
                                 var varName = uiElement.n ;
                                 if (uiElement.value != data[varName]){
                                     uiElement.changed = true ;
                                     uiElement.value = data[varName] ;
                                 }
+                                $scope.updateCharts(varName,data[varName]) ;
                             }) ;
                         }) ;
                         $timeout(function(){
                             $scope.resetChanged() ;
                         },3000) ;
+
                         cb(okResponse) ;
                     },
                     function(nokResponse){
@@ -181,7 +271,7 @@ angular.module('myApp.ui', ['ngRoute'])
                 ) ;
             } ;
 
-            // reading statitical variable
+            // reading statistical variable
 
             $scope.stats = {} ;
             $scope.readingStatsVariableTentativeCount = 0 ;
@@ -314,6 +404,7 @@ angular.module('myApp.ui', ['ngRoute'])
 
             $interval(function(){
                 $scope.readStatsVariable();
+                $scope.readStatusVariable() ; // updates values even if phonton don't notify changes
             },10000) ;
 
             $scope.readStatusVariable() ;
