@@ -1,23 +1,23 @@
 /*
-    Rotilio.cc firmware seed
+    Rotilio.cc firmware base
     carlo@techmakers.io
 
 */
 
 #define FIRMWARE_CLASS      "ROTILIO SEED FIRMWARE"
-#define FIRMWARE_VERSION    0.1
+#define FIRMWARE_VERSION    0.12
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
-#include "OneWire/OneWire.h"
-#include "Particle-BaroSensor/Particle-BaroSensor.h"
 
-#define UICONFIGARRAYSIZE 11
+#include "Particle_BaroSensor/Particle_BaroSensor.h"
+
+#define UICONFIGARRAYSIZE 13
 #define UICONFIGVERSION 1
 
 String uiConfig[UICONFIGARRAYSIZE] = {
     // page title
-    "[{'t':'head','text':'General purpose application'}]",
+    "[{'t':'head','text':'General purpose application v 1.0'}]",
     // sensors
     "[{'n':'temperature','l':'Temperature 1'},{'n':'exttemp','l':'Temperature 2'}]", // no 't' means, default:text, no 'l' means use 'n' as label
     "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",    
@@ -31,7 +31,9 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'t':'button','l':'Relais on for 1 second','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
     "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
     "[{'t':'button','l':'3 Beeps','m':'setalarm:3'}]",
-    "[{'t':'button','l':'Reset','m':'reset:now'}]"
+    "[{'t':'button','l':'D7 on','m':'d7:on'},{'t':'button','l':'D7 off','m':'d7:off'},{'t':'button','l':'Reset','m':'reset:now'}]",
+    "[{'t':'barchart','n':'barchart','names':['temperature','exttemp']}]",
+    "[{'t':'piechart','n':'piechart','segments':[{'n':'temperature','c':'#F7464A','h':'#FF5A5E','l':'Temp1'},{'n':'exttemp','c':'#46BFBD','h':'#5AD3D1','l':'Temp 2'}]}]"
 };
 
 
@@ -94,7 +96,9 @@ void setup(){
     
     digitalWrite(BUZZER, LOW);
     digitalWrite(RELAIS_SET, LOW);
-    digitalWrite(RELAIS_RESET, LOW);    
+    digitalWrite(RELAIS_RESET, LOW);  
+    
+    pinMode(D7, OUTPUT); 
 
     Serial.begin(115200);
     Wire.begin();              // si connette col bus i2c
@@ -116,9 +120,8 @@ void loop(){
     }
     
     temperature = temperatureRead() + TEMP_ADJUST_OFFSET;
-    pressure = round((double)BaroSensor.getPressure(OSR_8192)*10)/10 ;
+    pressure = BaroSensor.getPressure(OSR_8192) ;
     extTemperature = BaroSensor.getTemperature() + TEMP_ADJUST_OFFSET;
-    extTemperature = round(extTemperature*10)/10 ;
     humidity = humidityRead() ;
     photoresistor = analogRead(A1) ;
     trimmer = analogRead(A2) ;
@@ -153,6 +156,8 @@ int message(String message){
         return setrelais(argument) ;
     } else if (command.equals("setalarm")){
         return setalarm(argument) ;
+    } else if (command.equals("d7")){
+        return setD7(argument) ;
     } else if (command.equalsIgnoreCase("getuiconfig")){
         return sendUIConfig();
     } else if (command.equalsIgnoreCase("reset")){
@@ -160,6 +165,16 @@ int message(String message){
         return 0;
     } else {
         return -2 ;                         // command not found
+    }
+}
+
+int setD7(String argument){
+    if (argument.equals("on")){
+        digitalWrite(D7,HIGH) ;
+        return 1;
+    } else {
+        digitalWrite(D7,LOW) ;
+        return 0;
     }
 }
 
