@@ -66,7 +66,7 @@ Pressure/Altitude	- MS5673 (I2C - D0&D1) - precision 1 mbar
 
 ```
 Relais 		- Mono (D4) or bi-stable (D4&D3) 
-Buzzer 		- Resolution 1 bit (D5)
+Buzzer 		- Resolution 1 bit (A0)
 RGB Led 	- Resolution 8 bit/color (Photon)
 Blue Led	- Resolution 1 bit (D7)
 ```
