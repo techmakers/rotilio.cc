@@ -16,6 +16,29 @@ Ready made firmware with Web and Mobile user interface for out-of-the box operat
 
 ## Technical datasheet v1.0
 
+### Firmware
+
+```
+- Standard Arduino compatible
+- FreeRTOS based
+- OTA firmware update via cloud
+- HTTPs Restful Cloud API
+- Automatic application interface configuration
+```
+Automatic application interface configuration, a technology developed by us for Rotilio, let you define an interface configuration for every device with different firmware using only one generic user interface.
+No need of an app for every application.
+
+
+### User interface
+Ready to use, open source Web and Mobile user interface.
+You can use our hosted [Web App](https://rotilio.cc) or donwload and customize the [code here](https://github.com/techmakers/rotilio.cc/tree/master/browser).
+
+```
+- HTML5+CSS+JS with AngularJS, Twitter Bootstrap, ChartJs
+- PhoneGap ready
+- User authentication
+- Fully customizable
+```
 
 ### Pin out
 
@@ -99,27 +122,6 @@ Memory		- 1MB flash, 128KB RAM, 100 byte flash simulated EEProm
 Consumption: 
 - 160 microA in deep sleep mode (Photon only)
 - 450 mA full throttle with CPU+WiFI+Sensors+LED 
-```
-
-### Firmware
-
-```
-Standard Arduino compatible
-FreeRTOS based
-OTA firmware update via cloud
-HTTPs Restful Cloud API
-Automatic application interface configuration
-```
-
-### User interface
-See [https://rotilio.cc](https://rotilio.cc)
-
-```
-WEB and Mobile user interface
-HTML5+CSS+JS with AngularJS, Twitter Bootstrap, ChartJs
-PhoneGap ready
-User authentication
-Fully customizable
 ```
 
 ### Phisical dimension
