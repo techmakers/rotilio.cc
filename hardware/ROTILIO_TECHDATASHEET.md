@@ -88,8 +88,6 @@ Rotilio comes to you with the most common sensors and actuators, you can see Rot
 
 You may want connect Rotilio to other devices, so here you can find all the connections available.
 
-![Rotilio, PIN OUT](./images/ROTILIO_PINOUT.png "Rotilio pin out")
-
 
 ```
 A0 		- Buzzer
