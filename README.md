@@ -12,6 +12,7 @@ Ready made firmware with Web and Mobile user interface for out-of-the box operat
 
 **Secure** cloud communication for everyday operations and OTA firmware updates.
 
+![Rotilio, piattaforma IoT hw e sw open source](./images/tm_rotilio.jpg "Rotilio")
 
 ## Technical datasheet v1.0
 
