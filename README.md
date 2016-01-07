@@ -6,11 +6,11 @@ Fully loaded with common use **sensors and actuators**.
 
 Multiple communication channels: **WiFI, USB serial, TTL serial, RS485 serial**.
 
-Ready made firmware with Web and Mobile user interface for out-of-the box operation, **no coding** necessary to start.
+Ready made firmware with Web and Mobile user interface for out-of-the box operation, **no coding** necessary to start, just power on, connect to WiFI and open the Web and Mobile interface to play and control the world.
 
 **Secure** cloud communication for everyday operations and OTA firmware updates.
 
-![Rotilio, piattaforma IoT hw e sw open source](./images/tm_rotilio.jpg "Rotilio")
+![Rotilio, production ready Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, Arduino compatible FreeRTOS Particle.io chip](./images/tm_rotilio_con_photon.jpg "Rotilio")
 
 ## Technical datasheet v1.0
 
@@ -23,8 +23,8 @@ Ready made firmware with Web and Mobile user interface for out-of-the box operat
 - HTTPs Restful Cloud API
 - Automatic application interface configuration
 ```
-Automatic application interface configuration, a technology developed by us for Rotilio, let you define an interface configuration for every device with different firmware using only one generic user interface.
-No need of an app for every application.
+Automatic application interface configuration, a technology developed by us for Rotilio, lets you define an interface configuration for every device with different firmware using only one generic user interface.
+You don't need to develop a different app for for every different project.
 
 [Digg the code for more](https://github.com/techmakers/rotilio.cc/blob/master/firmware/RotilioSeed.ino)
 
@@ -84,7 +84,7 @@ For example, each time the Rotilio's relais switches to ON, you app can know thi
 
 ### Pin out
 
-Rotilio comes to you with the most common sensors and actuators, you can see Rotilio as an hardware endpoint for your Internet and Mobile applications.
+Rotilio comes to you with the most common sensors and actuators on board.
 
 You may want connect Rotilio to other devices, so here you can find all the connections available.
 
@@ -118,7 +118,7 @@ Vbat	- Backup battery (+3 V) for RTC clock in sleep mode
 +3.3V	- +3.3V power supply
 GND		- Ground
 ```
-See [Pinout](https://github.com/techmakers/rotilio.cc/raw/master/hardware/ROTILIO_PINOUT.pdf) datasheet in PDF format.
+Download [Pinout](https://github.com/techmakers/rotilio.cc/raw/master/hardware/ROTILIO_PINOUT.pdf) datasheet in PDF format.
 
 ### Input
 
@@ -168,9 +168,13 @@ Memory		- 1MB flash, 128KB RAM, 100 byte flash simulated EEProm
 
 ```
 +5V / +3.3V / Mini USB
-Consumption: 
+Typical power consumption: 
 - 160 microA in deep sleep mode (Photon only)
-- 450 mA full throttle with CPU+WiFI+Sensors+LED 
+- 450 mA full throttle with CPU+WiFI+Sensors+LED
+
+Using deep sleep mode, Rotilio can be powered by batteries. The on board battery permits to store some variables you need to persists to restore the status of memory and CPU awaking from sleep.
+The on board battery is not useful for power supply purpose, so you need to provide an external battery, connected to USB or +5v or +3.3v pins.
+
 ```
 
 ### Phisical dimensions
