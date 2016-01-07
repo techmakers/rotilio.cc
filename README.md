@@ -1,8 +1,6 @@
 # Rotilio
 
-**Production ready** Internet of Things (IoT) open source hardware and software platform
-
-With WiFI and GPRS/3G/LTE connectivity, **Arduino compatible** FreeRTOS [Particle.io](http://particle.io) chip.
+**Production ready** Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, **Arduino compatible** FreeRTOS [Particle.io](http://particle.io) chip.
 
 Fully loaded with common use **sensors and actuators**.
 
