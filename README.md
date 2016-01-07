@@ -173,7 +173,7 @@ Consumption:
 - 450 mA full throttle with CPU+WiFI+Sensors+LED 
 ```
 
-### Phisical dimension
+### Phisical dimensions
 
 ```
 70x70x20 mm
