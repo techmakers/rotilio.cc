@@ -88,18 +88,17 @@ Mini USB B	- RS-232 over USB
 ### CPU & Memory
 
 ```
-CPU			- STM32F205 120Mhz ARM Cortex M3
-Memory		- 1MB flash, 128KB RAM
+CPU			- STM32F205 120Mhz ARM Cortex M3, Arduino compatible
+Memory		- 1MB flash, 128KB RAM, 100 byte flash simulated EEProm
 ```
 
 ### Power supply
 
 ```
-+5V
-+3.3V
-Mini USB
-80 mA, 160 microA in deep sleep mode (Photon only)
-from 3 microA to 450 mA
++5V / +3.3V / Mini USB
+Consumption: 
+- 160 microA in deep sleep mode (Photon only)
+- 450 mA full throttle with CPU+WiFI+Sensors+LED 
 ```
 
 ### Firmware
