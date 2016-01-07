@@ -75,6 +75,10 @@ Blue Led	- Resolution 1 bit (D7)
 
 ```
 WiFI		- Broadcom BCM43362, 802.11b/g/n Wi-Fi, open, wep, wpa wpa2
+or
+CELLULAR 	- GPRS/3G/LTE Global data plan
+
+
 RS485 		- MAX485 Chip (A4/A5)
 SERIAL TTL 	- Serial TTL (RXD - TXD)
 I2C			- (D0&D1)
