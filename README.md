@@ -125,9 +125,12 @@ Fully customizable
 70x70x20 mm
 ```
 
-Proudly crafted and developed in Genova by [Techmakers srl](http://techmakers.io)
+### About us
 
-Open source MIT Licence
+Rotilio is proudly crafted and developed in Genova by [Techmakers srl](http://techmakers.io), a startup for Internet connected industrial and consumer products.
+
+
+### Open source MIT Licence
 
 Copyright (c) 2015 Techmakers srl
 
