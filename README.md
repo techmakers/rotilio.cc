@@ -146,7 +146,7 @@ Blue Led	- Resolution 1 bit (D7)
 ### Communication
 
 ```
-WiFI		- Broadcom BCM43362, 802.11b/g/n Wi-Fi, open, wep, wpa wpa2
+WiFI		- Broadcom BCM43362, 802.11b/g/n Wi-Fi, open, wep, wpa wpa2, Soft AP Setup, FCC/CE/IC certified
 or
 CELLULAR 	- GPRS/3G/LTE Global data plan
 
