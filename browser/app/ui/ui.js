@@ -146,6 +146,12 @@ angular.module('myApp.ui', ['ngRoute'])
                     });
 
                     function drawBarChart(uiElement){
+                        if (!document.getElementById(uiElement.n)){
+                            $timeout(function(){
+                                drawBarChart(uiElement);
+                            },1000);
+                            return ;
+                        }
                         var data = {
                             labels: uiElement.names,
                             datasets: [
@@ -173,6 +179,12 @@ angular.module('myApp.ui', ['ngRoute'])
                     }
 
                     function drawPieChart(uiElement){
+                        if (!document.getElementById(uiElement.n)){
+                            $timeout(function(){
+                                drawPieChart(uiElement);
+                            },1000);
+                            return ;
+                        }
                         uiElement.data = [] ;
                         uiElement.names = [] ;
                         uiElement.segments.forEach(function(segment){

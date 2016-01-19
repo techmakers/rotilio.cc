@@ -95,9 +95,9 @@ You may want connect Rotilio to other devices, so here you can find all the conn
 A0 		- Buzzer
 A1 		- Photoresistor
 A2 		- Trimmer
-A3 		- Free
-A4 		- MAX485
-A5 		- MAX485
+A3 		- Releais status
+A4 		- MAX485 - 
+A5 		- MAX485 - 
 A6 		- Free
 A7 		- Free
 D0 		- I2C SDA (on board temperature, umidity, pressure sensors)

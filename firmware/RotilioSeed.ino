@@ -5,7 +5,7 @@
 */
 
 #define FIRMWARE_CLASS      "ROTILIO SEED FIRMWARE"
-#define FIRMWARE_VERSION    0.12
+#define FIRMWARE_VERSION    0.13
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
@@ -13,7 +13,7 @@
 #include "Particle_BaroSensor/Particle_BaroSensor.h"
 
 #define UICONFIGARRAYSIZE 13
-#define UICONFIGVERSION 1
+#define UICONFIGVERSION 3
 
 String uiConfig[UICONFIGARRAYSIZE] = {
     // page title
@@ -22,7 +22,8 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'n':'temperature','l':'Temperature 1'},{'n':'exttemp','l':'Temperature 2'}]", // no 't' means, default:text, no 'l' means use 'n' as label
     "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",    
     "[{'n':'photoresistor','l':'Light'},{'n':'trimmer','l':'Trimmer'}]",
-    "[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]", 
+    //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]", 
+    "[{'n':'button1','t':'led','l':'Button 1'}]", 
     // actions
     
     "[{'n':'relais','t':'led','l':'Relais status'},{'n':'switch','l':'Switch','t':'switch-readonly'}]",
@@ -36,6 +37,8 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'t':'piechart','n':'piechart','segments':[{'n':'temperature','c':'#F7464A','h':'#FF5A5E','l':'Temp1'},{'n':'exttemp','c':'#46BFBD','h':'#5AD3D1','l':'Temp 2'}]}]"
 };
 
+
+#define RELAIS_IS_MONO       0
 
 #define DEBUG_INTERVAL_SECS 30
 
@@ -99,6 +102,8 @@ void setup(){
     digitalWrite(RELAIS_RESET, LOW);  
     
     pinMode(D7, OUTPUT); 
+    
+    setRelaisOff();
 
     Serial.begin(115200);
     Wire.begin();              // si connette col bus i2c
@@ -125,8 +130,28 @@ void loop(){
     humidity = humidityRead() ;
     photoresistor = analogRead(A1) ;
     trimmer = analogRead(A2) ;
+    
+    int actualButton1 = digitalRead(BUTTON_1) ;
+    if (actualButton1 == LOW){
+        sound(1000,250) ;
+        button1 = !button1 ;
+        sendVariableChanged("button1",button1 ? "1" : "0");
+    }
 
+    int actualButton2 = digitalRead(BUTTON_2) ;
+    if (actualButton2 == LOW){
+        sound(1000,250) ;
+        button2 = !button2 ;
+        sendVariableChanged("button2",button2 ? "1" : "0");
+    }
+
+
+    relais = digitalRead(RELAIS_FDB) ;
+    
+    switch0 = !digitalRead(SWITCH) ;
+    
     status = String(status_template) ; // copying ;
+
 
     status.replace("<temperature>",String(temperature));
     status.replace("<exttemp>",String(extTemperature)) ;
@@ -233,11 +258,23 @@ int setalarm(String command){
 }
 
 void setRelaisOn(bool force){
+
     digitalWrite(RELAIS_SET, HIGH);
+    
+    if (RELAIS_IS_MONO) return ;
+    
+    delay(100) ;
+    digitalWrite(RELAIS_SET, LOW);
 }
 
 void setRelaisOff(){
-    digitalWrite(RELAIS_SET, LOW);
+    if (RELAIS_IS_MONO){
+        digitalWrite(RELAIS_SET, LOW);
+    } else {
+        digitalWrite(RELAIS_RESET, HIGH);
+        delay(100) ;
+        digitalWrite(RELAIS_RESET, LOW);
+    }
 }
 
 int setrelais(String command){
@@ -269,3 +306,16 @@ void sendDebug(int count){
         String debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
         Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
 }
+
+void sendVariableChanged(String name, String value){
+    Particle.publish("variableChanged",name+":"+value,60,PRIVATE) ;
+}
+
+void setup_the_fundulating_conbobulator(){
+   setRelaisOff();
+}
+
+// The STARTUP call is placed outside of any other function
+// What goes inside is any valid code that can be executed. Here, we use a function call.
+// Using a single function is preferable to having several `STARTUP()` calls.
+STARTUP( setup_the_fundulating_conbobulator() );
