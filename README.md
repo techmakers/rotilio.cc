@@ -194,6 +194,32 @@ If you need support about Rotilio or want to know more about Rotilio and Techmak
 Rotilio is proudly crafted and developed in Genova by [Techmakers srl](http://techmakers.io), a startup for Internet connected industrial and consumer products.
 
 
+## Rotilio from scratch
+
+### Goal
+
+Have a Rotilio working and on-line starting from a brand new Photon. (you don't need to do that if you bought Rotilio with the Photon).
+
+### Steps
+
+1. Extract Photon from it's package and place it on Rotilio
+2. Use activation procedure from [Particle.io](https://docs.particle.io/guide/getting-started/start/photon/#step-1-power-on-your-device)
+3. Upload Rotilio firmware to your Photon (see above for details)
+4. Head on to [https://rotilio.cc](https://rotilio.cc) and log-in with same Particle.io credentials
+5. Select your Rotilio and enjoy !!!
+
+
+
+#### Upload Rotilio firmware to your Photon (step 3)
+
+1. Clone or download the code [https://github.com/techmakers/rotilio.cc/tree/master/firmware](https://github.com/techmakers/rotilio.cc/tree/master/firmware) on your desktop (or wathever you prefer on your PC)
+2. Head on to [https://build.particle.io/build](https://build.particle.io/build) and, if neccessay do login with your Particle.io credentials
+3. After interface opens, click "Create new app" button in the "Code" section.
+4. Name your App, eg: MyRotilio
+5. Be sure to select the right Photon device in the "Devices" section
+6. Click on "Flash" (the flash icon) to send the firmware to your Rotilio
+
+
 ### Open source MIT Licence
 
 Copyright (c) 2015 Techmakers srl
