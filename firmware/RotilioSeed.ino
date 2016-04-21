@@ -1,11 +1,15 @@
 /*
     Rotilio.cc firmware base
     carlo@techmakers.io
+    http://techmakers.io
 
+    © 2016 Techmakers srl
+
+    
 */
 
 #define FIRMWARE_CLASS      "ROTILIO SEED FIRMWARE"
-#define FIRMWARE_VERSION    0.13
+#define FIRMWARE_VERSION    0.15
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
@@ -41,6 +45,7 @@ String uiConfig[UICONFIGARRAYSIZE] = {
 #define RELAIS_IS_MONO       0
 
 #define DEBUG_INTERVAL_SECS 30
+String debugMsg = "" ;
 
 #define Si7020_ADDRESS    0x40
 #define SAMPLE_NUMBER        1
@@ -74,6 +79,29 @@ int alarm = 0 ;
 String status = "{}" ; 
 String status_template = "{\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
 
+
+// stats
+double relaisOnMinutesInLastDay = 0 ;
+double relaisOnAverageMinutesPerDay = 0 ;
+double relaisOnAveragePerDayCounter = 0;
+int lastDay = 0 ;
+
+double temperatureMin = 9999 ;
+double temperatureMax = -9999 ;
+double extTempMin = 9999 ;
+double extTempMax = 9999 ;
+int humidityMin = 9999 ;
+int humidityMax = -9999 ;
+double pressureMin = 9999 ;
+double pressureMax = -9999 ;
+int lightMin = 9999 ;
+int lightMax = -9999 ;
+
+String stats = "{}" ;
+String stats_template = "{\"Temperature Min\":<temperatureMin>,\"Temperature Max\":<temperatureMax>,\"Ext Temperature Min\":<extTemperatureMin>,\"Ext Temperature Max\":<extTemperatureMax>,\"Humidity Min\":\"<humidityMin>\",\"Humidity Max\":\"<humidityMax>\",\"Pressure Min\":<pressureMin>,\"Pressure Max\":<pressureMax>,\"Light Min\":<lightMin>,\"Light Max\":<lightMax>,\"RelaisOn minutes today\":<relaisOnMinutesInLastDay>,\"RelaisOn minutes a day\":<relaisOnAverageMinutesPerDay>}" ;
+
+
+
 // counter for debug function
 int l=0;
 int i=0;
@@ -85,6 +113,8 @@ void setup(){
     BaroSensor.begin();
       
     Particle.variable("status", status) ;
+    Particle.variable("stats",stats) ;
+    Particle.variable("d", debugMsg) ;
     
     Particle.function("message", message);      // see workMessage function     
     
@@ -164,6 +194,58 @@ void loop(){
     status.replace("<button1>",String(button1));
     status.replace("<button2>",String(button2));
     status.replace("<alarm>",String(alarm));
+    
+    
+    stats = String(stats_template);
+    
+    if (lastDay != Time.day()){
+        lastDay = Time.day() ;
+        relaisOnAveragePerDayCounter++ ;
+        relaisOnMinutesInLastDay = 0 ;
+        
+        extTempMin = 9999 ;
+        extTempMax = -9999 ;
+        temperatureMin = 9999 ;
+        temperatureMax = -9999 ;
+        humidityMin = 9999 ;
+        humidityMax = -9999 ;
+        pressureMin = 9999 ;
+        pressureMax = -9999 ;
+        lightMin = 9999 ;
+        lightMax = -9999 ;
+    }
+    
+   
+    
+    if (extTempMin > extTemperature) extTempMin = extTemperature ;
+    if (extTempMax < extTemperature) extTempMax = extTemperature ;
+    if (temperatureMin > temperature) temperatureMin = temperature ;
+    if (temperatureMax < temperature) temperatureMax = temperature ;
+    if (humidityMin > humidity) humidityMin = humidity ;
+    if (humidityMax < humidity) humidityMax = humidity ;
+    if (pressureMin > pressure) pressureMin = pressure ;
+    if (pressureMax < pressure) pressureMax = pressure ;
+    if (lightMin > photoresistor) lightMin = photoresistor ;
+    if (lightMax < photoresistor) lightMax = photoresistor ;
+    
+    if (relais == 1){
+        relaisOnMinutesInLastDay = relaisOnMinutesInLastDay + double(LOOP_DELAY/1000.0/60.0) ;
+    }
+    
+    relaisOnAverageMinutesPerDay = (relaisOnAverageMinutesPerDay * relaisOnAveragePerDayCounter + relaisOnMinutesInLastDay) / (relaisOnAveragePerDayCounter + 1.0);
+    
+    stats.replace("<temperatureMin>",String(temperatureMin));
+    stats.replace("<temperatureMax>",String(temperatureMax));
+    stats.replace("<extTemperatureMin>",String(extTempMin));
+    stats.replace("<extTemperatureMax>",String(extTempMax));
+    stats.replace("<humidityMin>",String(humidityMin));
+    stats.replace("<humidityMax>",String(humidityMax));
+    stats.replace("<pressureMin>",String(pressureMin));
+    stats.replace("<pressureMax>",String(pressureMax));
+    stats.replace("<lightMin>",String(lightMin));
+    stats.replace("<lightMax>",String(lightMax));
+    stats.replace("<relaisOnMinutesInLastDay>",String(relaisOnMinutesInLastDay));
+    stats.replace("<relaisOnAverageMinutesPerDay>",String(round(relaisOnAverageMinutesPerDay*10)/10));
     
     delay(LOOP_DELAY); 
 }
@@ -303,8 +385,15 @@ int sendUIConfig(){
 }
 
 void sendDebug(int count){
-        String debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
+    #if PLATFORM_ID == 10 // electron
+        CellularSignal sig = Cellular.RSSI();
+        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," + sig.qual + "," + sig.rssi ;
+        // dont send debug, we published a variable so the cloud can know the situation
+        // Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
+    #else
+        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
         Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
+    #endif
 }
 
 void sendVariableChanged(String name, String value){
@@ -319,3 +408,4 @@ void setup_the_fundulating_conbobulator(){
 // What goes inside is any valid code that can be executed. Here, we use a function call.
 // Using a single function is preferable to having several `STARTUP()` calls.
 STARTUP( setup_the_fundulating_conbobulator() );
+
