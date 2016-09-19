@@ -23,9 +23,11 @@
 
         <p>Read the code to learn: <a href="index.js">Javascript</a></p>
         <hr />
+
+        <button onclick="login()">0. LOGIN</button>
         Particle username: <input type="text" value="carlo.cassinari@gmail.com" id="username" size="25" /> &nbsp;
         and password: <input type="text" value="modem323" id="password" size="20"/>
-        <button onclick="login()">0. LOGIN</button>
+
         access_token: <input type="text" value="" id="access_token_field" size="40" />
         <br />
 
@@ -33,29 +35,43 @@
 
         <button onclick="readDevices()">1. READ DEVICES</button>
 
+        <select id="deviceSelect" onchange="selectDevice()">
+            <option>Click on "READ DEVICES" to compile this menu</option>
+        </select>
 
-
-        <br />
+        <hr />
 
         <button onclick="readDeviceInfo()">2. READ DEVICE INFO</button>
 
         DeviceId:<input type="text" value="" id="deviceIdInput" onkeyup="updateDeviceId()" onblur="updateDeviceId()" size="30" />
 
-        <br />
+        <hr />
 
-        <button onclick="readStatus()">3. READ VARIABLE</button>
-        <input type="text" value="STATUS" id="variableNameField" size="30" />
+        <button onclick="readVariable()">3. READ VARIABLE</button>
 
 
-        <br />
+        <select id="variableSelect" onchange="selectVariable()">
+            <option>Click on "READ DEVICE INFO" to compile this menu</option>
+        </select>
+
+        <input type="text" value="" id="variableNameField" size="30" />
+
+        <hr />
 
         <button onclick="sendmessage()">4. CALL FUNCTION</button>
+
+        <select id="functionSelect" onchange="selectFunction()">
+            <option>Click on "READ DEVICE INFO" to compile this menu</option>
+        </select>
+
         <input type="text" id="functionNameInput" size="30" value="message" />
         <input type="text" id="messageInput" size="30" value="setalarm:2" />
 
-        <br />
+        <hr />
 
         <button onclick="subscribeEvents()">5. LISTEN EVENTS</button>
+        <input type="text" id="eventNamesInput" size="50" value="debugmsg, variableChanged" />
+        <hr />
         <table style="width:100%">
             <tr>
                 <td style="width:50%">Console</textarea></td>

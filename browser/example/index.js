@@ -43,7 +43,20 @@ function readDevices(){
         if (xhr.status === 200) {
             var obj = JSON.parse(xhr.response) ;
             addToConsole(obj) ;
-            if (!deviceId && obj.length > 0) setDeviceId(obj[0].id)
+            var x = document.getElementById("deviceSelect");
+            while (x.options.length){
+                x.options.remove(0);
+            }
+            var i = 0;
+            obj.forEach(function(device){
+                var option = document.createElement("option");
+                option.value = device.id;
+                option.text = device.name ;
+                if (i==0) option.selected = true ;
+                i++ ;
+                x.add(option);
+            });
+            selectDevice();
         }
         else {
             addToConsole(xhr.responseText) ;
@@ -51,6 +64,12 @@ function readDevices(){
         addToConsole("---------------- RESPONSE END ----------------") ;
     };
     xhr.send();
+}
+
+function selectDevice(){
+    var x = document.getElementById("deviceSelect");
+    var selected = x.options[x.selectedIndex] ;
+    setDeviceId(x.value) ;
 }
 
 function readDeviceInfo(){
@@ -70,6 +89,37 @@ function readDeviceInfo(){
         if (xhr.status === 200) {
             var obj = JSON.parse(xhr.response) ;
             addToConsole(obj) ;
+            var x = document.getElementById("variableSelect");
+            while (x.options.length){
+                x.options.remove(0);
+            }
+            var i=0 ;
+            for (var k in obj.variables){
+                var option = document.createElement("option");
+                option.value = k;
+                option.text = k ;
+                if (i==0) option.selected = true ;
+                i++ ;
+                x.add(option);
+            }
+            selectVariable();
+
+            x = document.getElementById("functionSelect");
+            while (x.options.length){
+                x.options.remove(0);
+            }
+            i = 0;
+            obj.functions.forEach(function(functionname){
+                var option = document.createElement("option");
+                option.value = functionname;
+                option.text = functionname ;
+                if (i==0) option.selected = true ;
+                i++ ;
+                x.add(option);
+            });
+
+            selectFunction();
+
         }
         else {
             addToConsole(xhr.responseText) ;
@@ -79,12 +129,24 @@ function readDeviceInfo(){
     xhr.send();
 }
 
-function readStatus(){
+function selectVariable(){
+    var x = document.getElementById("variableSelect");
+    var selected = x.options[x.selectedIndex] ;
+    document.getElementById('variableNameField').value = x.value ;
+}
+
+function selectFunction(){
+    var x = document.getElementById("functionSelect");
+    var selected = x.options[x.selectedIndex] ;
+    document.getElementById('functionNameInput').value = x.value ;
+}
+
+function readVariable(){
 
     var variableName = document.getElementById('variableNameField').value ;
 
     clearConsole();
-    addToConsole("Reading status...") ;
+    addToConsole("Reading variable: " + variableName + " ...") ;
 
     var url = "https://api.particle.io/v1/devices/"+deviceId+"/" + variableName + "?access_token="+access_token ;
 
@@ -127,13 +189,13 @@ function subscribeEvents(){
         addToEvents(e);
     },false);
 
-    eventSource.addEventListener('debugmsg', function(e) {
-        addToEvents(e);
-    },false);
-
-    eventSource.addEventListener('variableChanged', function(e) {
-        addToEvents(e);
-    },false);
+    var eventNames = document.getElementById('eventNamesInput').value ;
+    if (eventNames) eventNames = eventNames.split(",") ;
+    eventNames.forEach(function(eventName){
+        eventSource.addEventListener(eventName.trim(), function(e) {
+            addToEvents(e);
+        },false);
+    }) ;
 }
 
 function sendmessage() {
@@ -143,6 +205,14 @@ function sendmessage() {
 
     var xhr = new XMLHttpRequest();
     var url = "https://api.particle.io/v1/devices/"+deviceId+"/" + functionname + "?access_token="+access_token ;
+
+    clearConsole();
+    addToConsole("POST: " + url);
+    addToConsole("") ;
+    addToConsole("POST DATA: " + 'args=' + message) ;
+    addToConsole("") ;
+    addToConsole("--------------- RESPONSE START ---------------") ;
+
     xhr.open('POST', url);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.onload = function() {
