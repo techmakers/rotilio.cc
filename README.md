@@ -12,6 +12,18 @@ Ready made firmware with Web and Mobile user interface for out-of-the box operat
 
 ![Rotilio, production ready Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, Arduino compatible FreeRTOS Particle.io chip](./images/tm_rotilio_con_photon.jpg "Rotilio")
 
+### Standard web/mobile interface for Rotilio App
+
+![Rotilio, production ready Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, Arduino compatible FreeRTOS Particle.io chip](./images/RotilioStandardMobileApp.png "Rotilio Mobile App")
+
+This interface is fully customizable.
+You can operate in the firmware to define witch information are presented in the interface, and in the HTML/JS part as well.
+
+You can have an example of working web responsive interface at this url: [https://rotilio.cc](https://rotilio.cc)
+
+If you want to learn about Particle.io API and Javascript with a simple but complete example with no third-party library head up to: [https://rotilio.cc/example](https://rotilio.cc/example).
+
+
 ## Technical datasheet v1.0
 
 ### Firmware
@@ -23,6 +35,7 @@ Ready made firmware with Web and Mobile user interface for out-of-the box operat
 - HTTPs Restful Cloud API
 - Automatic application interface configuration
 ```
+
 Automatic application interface configuration, a technology developed by us for Rotilio, lets you define an interface configuration for every device with different firmware using only one generic user interface.
 You don't need to develop a different app for for every different project.
 
