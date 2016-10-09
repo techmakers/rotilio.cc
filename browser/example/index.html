@@ -28,7 +28,7 @@
         Particle username: <input type="text" value="" id="username" size="25" /> &nbsp;
         and password: <input type="text" value="" id="password" size="20"/>
 
-        access_token: <input type="text" value="" id="access_token_field" size="40" />
+        access_token: <input type="text" value="" id="access_token_field" size="40" onblur="updateAccessToken()" />
         <br />
 
         <hr />
@@ -70,7 +70,7 @@
         <hr />
 
         <button onclick="subscribeEvents()">5. LISTEN EVENTS</button>
-        <input type="text" id="eventNamesInput" size="50" value="debugmsg, variableChanged" />
+        <input type="text" id="eventNamesInput" size="50" value="debugmsg, variableChanged, envmsg" />
         <hr />
         <table style="width:100%">
             <tr>

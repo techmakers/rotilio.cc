@@ -28,6 +28,8 @@ angular.module('myApp.home', ['ngRoute'])
                     },
                     function(nokResponse){
                         console.log(nokResponse) ;
+                        $scope.access_token = "" ;
+                        showLogin() ;
                         cb(nokResponse) ;
                     }
                 ) ;

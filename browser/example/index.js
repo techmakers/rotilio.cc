@@ -25,6 +25,9 @@ function login(){
     xhr.send(encodeURI('grant_type=password&username=' + username + "&password=" + password));
 }
 
+function updateAccessToken(){
+    access_token = document.getElementById('access_token_field').value ;
+}
 
 function readDevices(){
 
@@ -159,7 +162,12 @@ function readVariable(){
         addToConsole("--------------- RESPONSE START ---------------") ;
         if (xhr.status === 200) {
             var obj = JSON.parse(xhr.response) ;
-            addToConsole(JSON.parse(obj.result)) ;
+            if (obj.result.indexOf('{') === 0) {
+                // result is JSON
+                obj.result = JSON.parse(obj.result) ;
+            }
+            addToConsole(obj) ;
+
         }
         else {
             addToConsole(xhr.responseText) ;
