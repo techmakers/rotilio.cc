@@ -9,9 +9,11 @@
 */
 
 #define FIRMWARE_CLASS      "ROTILIO SEED FIRMWARE"
-#define FIRMWARE_VERSION    0.15
+#define FIRMWARE_VERSION    0.16
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
+
+SYSTEM_MODE(SEMI_AUTOMATIC);
 
 
 #include "Particle_BaroSensor/Particle_BaroSensor.h"
@@ -41,8 +43,12 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'t':'piechart','n':'piechart','segments':[{'n':'temperature','c':'#F7464A','h':'#FF5A5E','l':'Temp1'},{'n':'exttemp','c':'#46BFBD','h':'#5AD3D1','l':'Temp 2'}]}]"
 };
 
+#define LIGHTUPIFDARK        1
+#define LIGHTDOWNIFDARK		 2
 
-#define RELAIS_IS_MONO       0
+#define LIGHTMODE            LIGHTDOWNIFDARK
+
+#define RELAIS_IS_MONO       1
 
 #define DEBUG_INTERVAL_SECS 30
 String debugMsg = "" ;
@@ -63,6 +69,7 @@ String debugMsg = "" ;
 #define LOOP_DELAY      1000.0
 
 
+
 // variable Inizialization
 double temperature = 99999 ; 
 double extTemperature = 99999 ;
@@ -75,9 +82,13 @@ int button2 = false ;
 int switch0 = false ; 
 int relais = false ;
 int alarm = 0 ;
+int deltaLight = 0 ;
 
 String status = "{}" ; 
-String status_template = "{\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
+String status_template = "{\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"deltalight\":<deltalight>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
+
+String STATUS_0_template = "<ssid>,<rssi>,<temperature>,<exttemp>,<humidity>,<pressure>,<photoresistor>,<trimmer>,<button1>,<button2>,<switch>,<relais>,<alarm>" ;
+
 
 
 // stats
@@ -142,6 +153,8 @@ void setup(){
 
 void loop(){
     
+    if (!Particle.connected()) Particle.connect();
+    
     if (alarm > 0){
         sound(1000,250);
         alarm-- ;
@@ -160,6 +173,7 @@ void loop(){
     humidity = humidityRead() ;
     photoresistor = analogRead(A1) ;
     trimmer = analogRead(A2) ;
+    deltaLight = photoresistor - trimmer ;
     
     int actualButton1 = digitalRead(BUTTON_1) ;
     if (actualButton1 == LOW){
@@ -189,6 +203,7 @@ void loop(){
     status.replace("<pressure>",String(pressure));
     status.replace("<photoresistor>",String(photoresistor));
     status.replace("<trimmer>",String(trimmer));
+    status.replace("<deltalight>",String(deltaLight));
     status.replace("<switch>",String(switch0));
     status.replace("<relais>",String(relais));
     status.replace("<button1>",String(button1));
@@ -246,8 +261,21 @@ void loop(){
     stats.replace("<lightMax>",String(lightMax));
     stats.replace("<relaisOnMinutesInLastDay>",String(relaisOnMinutesInLastDay));
     stats.replace("<relaisOnAverageMinutesPerDay>",String(round(relaisOnAverageMinutesPerDay*10)/10));
+
+    if (switch0){
+        if (photoresistor > trimmer){
+            // is DARK
+            if (LIGHTMODE == LIGHTUPIFDARK) setRelaisOn();
+            if (LIGHTMODE == LIGHTDOWNIFDARK) setRelaisOff();
+        } else {
+            // is NOT DARK
+            if (LIGHTMODE == LIGHTUPIFDARK) setRelaisOff();
+            if (LIGHTMODE == LIGHTDOWNIFDARK) setRelaisOn();
+        }
+    }    
     
     delay(LOOP_DELAY); 
+
 }
 
 int message(String message){
@@ -339,7 +367,7 @@ int setalarm(String command){
     return alarm ;
 }
 
-void setRelaisOn(bool force){
+void setRelaisOn(){
 
     digitalWrite(RELAIS_SET, HIGH);
     
@@ -363,12 +391,12 @@ int setrelais(String command){
     int cmd = LOW ;
     if (command.equalsIgnoreCase("on"))  {
         cmd = HIGH ;
-        setRelaisOn(true) ;
+        setRelaisOn() ;
     } else if (command.equalsIgnoreCase("off")){
         setRelaisOff() ;
     } else {
         cmd = command.toInt() ;
-        setRelaisOn(true) ;
+        setRelaisOn() ;
         delay(cmd) ;
         setRelaisOff() ;
     }
@@ -378,7 +406,7 @@ int setrelais(String command){
 int sendUIConfig(){
     for (int iii=0;iii<UICONFIGARRAYSIZE;iii++){
         String row = "{'id':" + String(iii) + ",'c':" + uiConfig[iii] + "}" ;
-        Particle.publish("uiConfig",row,60,PRIVATE) ;
+        if (Particle.connected()) Particle.publish("uiConfig",row,60,PRIVATE) ;
         delay(500) ; // needed to avoid message drops by Particle cloud
     }
     return UICONFIGVERSION ;
@@ -392,12 +420,12 @@ void sendDebug(int count){
         // Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
     #else
         debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
-        Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
+        if (Particle.connected()) Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
     #endif
 }
 
 void sendVariableChanged(String name, String value){
-    Particle.publish("variableChanged",name+":"+value,60,PRIVATE) ;
+    if (Particle.connected()) Particle.publish("variableChanged",name+":"+value,60,PRIVATE) ;
 }
 
 void setup_the_fundulating_conbobulator(){
@@ -408,4 +436,3 @@ void setup_the_fundulating_conbobulator(){
 // What goes inside is any valid code that can be executed. Here, we use a function call.
 // Using a single function is preferable to having several `STARTUP()` calls.
 STARTUP( setup_the_fundulating_conbobulator() );
-
