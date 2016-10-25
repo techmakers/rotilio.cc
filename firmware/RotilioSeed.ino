@@ -9,7 +9,7 @@
 */
 
 #define FIRMWARE_CLASS      "ROTILIO SEED FIRMWARE"
-#define FIRMWARE_VERSION    0.16
+#define FIRMWARE_VERSION    0.17
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
@@ -18,7 +18,7 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 #include "Particle_BaroSensor/Particle_BaroSensor.h"
 
-#define UICONFIGARRAYSIZE 13
+#define UICONFIGARRAYSIZE 11
 #define UICONFIGVERSION 3
 
 String uiConfig[UICONFIGARRAYSIZE] = {
@@ -26,21 +26,19 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'t':'head','text':'General purpose application v 1.0'}]",
     // sensors
     "[{'n':'temperature','l':'Temperature 1'},{'n':'exttemp','l':'Temperature 2'}]", // no 't' means, default:text, no 'l' means use 'n' as label
-    "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",    
+    "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",
     "[{'n':'photoresistor','l':'Light'},{'n':'trimmer','l':'Trimmer'}]",
-    //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]", 
-    "[{'n':'button1','t':'led','l':'Button 1'}]", 
+    //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]",
+    "[{'n':'button1','t':'led','l':'Button 1'}]",
     // actions
-    
+
     "[{'n':'relais','t':'led','l':'Relais status'},{'n':'switch','l':'Switch','t':'switch-readonly'}]",
-    
+
     "[{'t':'button','l':'Manual relais on','m':'setrelais:on'},{'t':'button','l':'Manual relais off','m':'setrelais:off'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
     "[{'t':'button','l':'Relais on for 1 second','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
     "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
     "[{'t':'button','l':'3 Beeps','m':'setalarm:3'}]",
-    "[{'t':'button','l':'D7 on','m':'d7:on'},{'t':'button','l':'D7 off','m':'d7:off'},{'t':'button','l':'Reset','m':'reset:now'}]",
-    "[{'t':'barchart','n':'barchart','names':['temperature','exttemp']}]",
-    "[{'t':'piechart','n':'piechart','segments':[{'n':'temperature','c':'#F7464A','h':'#FF5A5E','l':'Temp1'},{'n':'exttemp','c':'#46BFBD','h':'#5AD3D1','l':'Temp 2'}]}]"
+    "[{'t':'button','l':'D7 on','m':'d7:on'},{'t':'button','l':'D7 off','m':'d7:off'},{'t':'button','l':'Reset','m':'reset:now'}]"
 };
 
 #define LIGHTUPIFDARK        1
