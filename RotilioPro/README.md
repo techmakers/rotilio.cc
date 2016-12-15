@@ -1,8 +1,8 @@
-# Rotilio Maker
+# Rotilio Pro
 
 **Production ready** Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, **Arduino compatible** FreeRTOS [Particle.io](http://particle.io) chip.
 
-Fully loaded with common use **sensors and actuators**.
+Ready to go, for Industrial field applications, with RS-485 connectivity, Modbus.
 
 Multiple communication channels: **WiFI, USB serial, TTL serial, RS485 serial**.
 
@@ -10,18 +10,7 @@ Ready made firmware with Web and Mobile user interface for out-of-the box operat
 
 **Secure** cloud communication for everyday operations and OTA firmware updates.
 
-![Rotilio Maker, production ready Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, Arduino compatible FreeRTOS Particle.io chip](../images/tm_rotilio_con_photon.jpg "Rotilio")
-
-### Standard web/mobile interface for Rotilio App
-
-![Rotilio Maker, production ready Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, Arduino compatible FreeRTOS Particle.io chip](../images/RotilioStandardMobileApp.png "Rotilio Mobile App")
-
-This interface is fully customizable.
-You can operate in the firmware to define witch information are presented in the interface, and in the HTML/JS part as well.
-
-You can have an example of working web responsive interface at this url: [https://rotilio.cc](https://rotilio.cc)
-
-If you want to learn about Particle.io API and Javascript with a simple but complete example with no third-party library head up to: [https://rotilio.cc/example](https://rotilio.cc/example).
+![Rotilio, production ready Internet of Things (IoT) open source hardware and software platform with WiFI and GPRS/3G/LTE connectivity, Arduino compatible FreeRTOS Particle.io chip](../images/rotilio_pro.png "Rotilio Pro")
 
 
 ## Technical datasheet v1.0
@@ -33,71 +22,34 @@ If you want to learn about Particle.io API and Javascript with a simple but comp
 - FreeRTOS based
 - OTA firmware update via cloud
 - HTTPs Restful Cloud API
-- Automatic application interface configuration
 ```
 
-Automatic application interface configuration, a technology developed by us for Rotilio, lets you define an interface configuration for every device with different firmware using only one generic user interface.
-You don't need to develop a different app for for every different project.
+Rotilio Pro is the ideal solution to deal with Rs-485 communications. You can use it to play with industrial PLC, using MODBUS protocol for example.
 
-[Digg the code for more](https://github.com/techmakers/rotilio.cc/blob/master/firmware/RotilioSeed.ino)
+Here you can find a simple example of PLAIN Rs-485 communication between two RS-485 devices.
 
+In this case we connect two Rotilio Pro on the same RS-485 bus just to have an echo of each sent message.
 
-### User interface
-Ready to use, open source Web and Mobile user interface.
-You can use our hosted [Web App](https://rotilio.cc) or donwload and customize the [code here](https://github.com/techmakers/rotilio.cc/tree/master/browser).
+To send a message you have to call the Particle function ```RS485SEND```, to listen for incomin messages you have to subscribe to particle event ```RS485MESSAGE```
 
-```
-- HTML5+CSS+JS with AngularJS, Twitter Bootstrap, ChartJs
-- PhoneGap ready
-- User authentication
-- Fully customizable
-```
 
 ### Cloud connectivity
-Basically Rotilio can expose variables like temperature, umidity,pressure, light and send events on changes of these and other variables.
-Rotilio can receive instructions to switch on the relais, the buzzer, the RGB led and so on.
 
-For standard operation you don't need to manage code, https calls and security but you may want customize Rotilio, so let's make some http restful examples.
-
-(For full documentation about Particle.io Cloud API see [https://docs.particle.io/guide/getting-started/intro/photon/](https://docs.particle.io/guide/getting-started/intro/photon/))
-
-For security sake, to post a cloud API call you need an Access Token like this ```a8e5239db48cdd43165abf879fcd7f43280cd874```. 
-
-You can obtain the access token from the Rotilio user interface, look at the url after login.
-
-##### How to read a variable from a device
-the variable name is ```stats```, the device id is ```30001c000647343232363230```.
+#### Send a RS-485 message
 
 ```
-https://api.particle.io/v1/devices/30001c000647343232363230/stats?access_token=a8e5239db48cdd43165abf879fcd7f43280cd874
+https://api.particle.io/v1/devices/30001c000647343232363230/RS485SEND?access_token=a8e5239db48cdd43165abf879fcd7f43280cd874&args=HELLOWORLD
 ```
 
-##### How to send a command to a device
-the command is ```message```, the message argument is ```setrelais:on```. As you can guess, this is the command to switch on the Rotilio's relais.
+#### Subscribing to RS-485 messages
 
 ```
-https://api.particle.io/v1/devices/30001c000647343232363230/message?access_token=a8e5239db48cdd43165abf879fcd7f43280cd874&args=setrelais%3Aon
+https://api.spark.io/v1/devices/30001c000647343232363230/events/RS485MESSAGE?access_token=a8e5239db48cdd43165abf879fcd7f43280cd874
 ```
-
-Lets' immagine how much can be simple to write down a web or mobile app to manage the garage door opening in les than an hour.
-
-##### Listen to an event with Eventsource
-The big thing is that Rotilio can send events to applications, servers and other cloud services.
-
-```
-https://api.spark.io/v1/devices/30001c000647343232363230/events/?access_token=a8e5239db48cdd43165abf879fcd7f43280cd874
-```
-For example, each time the Rotilio's relais switches to ON, you app can know this receving a message like below.
-
-```
-{"data":"relais:1","ttl":"60","published_at":"2016-01-07T22:15:30.482Z","coreid":"30001c000647343232363230"}
-```
-
-
 
 ### Pin out
 
-Rotilio comes to you with the most common sensors and actuators on board.
+Rotilio Pro comes to you with the minimal hardware configuration needed to communicate over a RS-485 channel.
 
 You may want connect Rotilio to other devices, so here you can find all the connections available.
 
@@ -211,7 +163,7 @@ Rotilio is proudly crafted and developed in Genova by [Techmakers srl](http://te
 
 ### Goal
 
-Have a Rotilio working and on-line starting from a brand new Photon. (you don't need to do that if you bought Rotilio with the Photon, because we ship Photon with the firmware updated).
+Have a Rotilio working and on-line starting from a brand new Photon. (you don't need to do that if you bought Rotilio with the Photon).
 
 ### Steps
 
