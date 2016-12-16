@@ -47,66 +47,6 @@ https://api.particle.io/v1/devices/30001c000647343232363230/RS485SEND?access_tok
 https://api.spark.io/v1/devices/30001c000647343232363230/events/RS485MESSAGE?access_token=a8e5239db48cdd43165abf879fcd7f43280cd874
 ```
 
-### Pin out
-
-Rotilio Pro comes to you with the minimal hardware configuration needed to communicate over a RS-485 channel.
-
-You may want connect Rotilio to other devices, so here you can find all the connections available.
-
-![Rotilio, PIN OUT](../images/ROTILIO_PINOUT.png "Rotilio pin out")
-
-
-```
-A0 		- Buzzer
-A1 		- Photoresistor
-A2 		- Trimmer
-A3 		- Releais status
-A4 		- MAX485 - 
-A5 		- MAX485 - 
-A6 		- Free
-A7 		- Free
-D0 		- I2C SDA (on board temperature, umidity, pressure sensors)
-D1 		- I2C SCL (on board temperature, umidity, pressure sensors)
-D2 		- P1, user button 1
-D3 		- RELAIS RESET (bistable only OFF)
-D4 		- RELAIS SET (monostable on/off - bistable ON)
-D5 		- Switch
-D6 		- P2, user button 2
-D7 		- Free (on board blue led)
-TXD		- SERIAL TTL TX
-RXD		- SERIAL TTL RX
-RS485A	- RS-485 Serial A
-RS485B  - RS-485 Serial B
-RST		- Reset
-Vbat	- Backup battery (+3 V) for RTC clock in sleep mode
-+5V		- +5V power supply
-+3.3V	- +3.3V power supply
-GND		- Ground
-```
-Download [Pinout](https://github.com/techmakers/rotilio.cc/raw/master/hardware/ROTILIO_PINOUT.pdf) datasheet in PDF format.
-
-### Input
-
-```
-Photoresistor 		- Resolution 12 bit (A1)
-Trimmer 			- Resolution 12 bit (A2)
-P1 					- Resolution 1 bit (D2)
-P2 					- Resolution 1 bit (D6)
-Switch 				- Resolution 1 bit (D5)
-Temperature1		- Si7020 (I2C - D0&D1) - precision 0.1°C
-Umidity 			- Si7020 (I2C - D0&D1) - precision 1%
-Temperature2		- MS5673 (I2C - D0&D1) - precision 0.1°C
-Pressure/Altitude	- MS5673 (I2C - D0&D1) - precision 1 mbar
-```
-
-### Ouput
-
-```
-Relais 		- Mono (D4) or bi-stable (D4&D3), simple screw connector,no soldering needed 
-Buzzer 		- Resolution 1 bit (A0)
-RGB Led 	- Resolution 8 bit/color (Photon), alpha intensity
-Blue Led	- Resolution 1 bit (D7)
-```
 
 ### Communication
 
@@ -135,7 +75,7 @@ Memory		- 1MB flash, 128KB RAM, 100 byte flash simulated EEProm
 +5V / +3.3V / Mini USB
 Typical power consumption: 
 - 160 microA in deep sleep mode (Photon only)
-- 450 mA full throttle with CPU+WiFI+Sensors+LED
+- 450 mA full throttle with CPU+WiFI+LED
 
 Using deep sleep mode, Rotilio can be powered by batteries. The on board battery permits to store some variables you need to persists to restore the status of memory and CPU awaking from sleep.
 The on board battery is not useful for power supply purpose, so you need to provide an external battery, connected to USB or +5v or +3.3v pins.
@@ -145,12 +85,12 @@ The on board battery is not useful for power supply purpose, so you need to prov
 ### Phisical dimensions
 
 ```
-70x70x20 mm
+69x35x20 mm
 ```
 
 ### Support and where to buy Rotilio
 
-You can buy Rotilio, ready to go, here: [Techmakers srl](http://techmakers.io/buy_rotilio.html).
+You can buy Rotilio PRO, ready to go, here: [Techmakers srl](http://techmakers.io/IoT-products-forMakers.html).
 
 If you need support about Rotilio or want to know more about Rotilio and Techmakers, drop us a line to: [support@techmakers.io](support@techmakers.io)
 

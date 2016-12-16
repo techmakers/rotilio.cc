@@ -198,7 +198,7 @@ The on board battery is not useful for power supply purpose, so you need to prov
 
 ### Support and where to buy Rotilio
 
-You can buy Rotilio, ready to go, here: [Techmakers srl](http://techmakers.io/buy_rotilio.html).
+You can buy Rotilio MAKER, ready to go, here: [Techmakers srl](http://techmakers.io/IoT-products-forMakers.html).
 
 If you need support about Rotilio or want to know more about Rotilio and Techmakers, drop us a line to: [support@techmakers.io](support@techmakers.io)
 
