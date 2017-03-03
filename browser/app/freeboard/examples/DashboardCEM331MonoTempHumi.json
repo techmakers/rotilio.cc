@@ -1,0 +1,120 @@
+{
+	"version": 1,
+	"allow_edit": true,
+	"plugins": [],
+	"panes": [
+		{
+			"title": "Valori attuali",
+			"width": 1,
+			"row": {
+				"3": 1
+			},
+			"col": {
+				"3": 2
+			},
+			"col_width": "2",
+			"widgets": [
+				{
+					"type": "sparkline",
+					"settings": {
+						"title": "Temperatura",
+						"value": [
+							"datasources[\"CEM331_STATUS8\"][\"result\"].split(\",\")[4]/100"
+						],
+						"include_legend": true,
+						"legend": "°C"
+					}
+				},
+				{
+					"type": "sparkline",
+					"settings": {
+						"title": "Umidità",
+						"value": [
+							"datasources[\"CEM331_STATUS8\"][\"result\"].split(\",\")[5]/100"
+						],
+						"include_legend": true,
+						"legend": "%"
+					}
+				},
+				{
+					"type": "sparkline",
+					"settings": {
+						"title": "Potenza",
+						"value": [
+							"datasources[\"CEM331_STATUS1\"][\"result\"].split(\",\")[7]"
+						],
+						"include_legend": true,
+						"legend": "Watt"
+					}
+				}
+			]
+		},
+		{
+			"title": "Valori attuali",
+			"width": 1,
+			"row": {
+				"3": 1
+			},
+			"col": {
+				"3": 1
+			},
+			"col_width": "1",
+			"widgets": [
+				{
+					"type": "gauge",
+					"settings": {
+						"title": "Temperatura",
+						"value": "datasources[\"CEM331_STATUS8\"][\"result\"].split(\",\")[4]/100",
+						"units": "°C",
+						"min_value": "-20",
+						"max_value": "40"
+					}
+				},
+				{
+					"type": "gauge",
+					"settings": {
+						"title": "Umidità",
+						"value": "datasources[\"CEM331_STATUS8\"][\"result\"].split(\",\")[5]/100",
+						"units": "%",
+						"min_value": 0,
+						"max_value": 100
+					}
+				},
+				{
+					"type": "gauge",
+					"settings": {
+						"title": "Potenza",
+						"value": "datasources[\"CEM331_STATUS1\"][\"result\"].split(\",\")[7]",
+						"units": "Watt",
+						"min_value": 0,
+						"max_value": "4000"
+					}
+				}
+			]
+		}
+	],
+	"datasources": [
+		{
+			"name": "CEM331_STATUS8",
+			"type": "JSON",
+			"settings": {
+				"url": "https://api.particle.io/v1/devices/3f0036000547343337373738/STATUS_8?access_token=c2d52dd03196d2832a1f04e9b4a98c6acaaa4026",
+				"use_thingproxy": false,
+				"refresh": 5,
+				"method": "GET",
+				"name": "CEM331_STATUS8"
+			}
+		},
+		{
+			"name": "CEM331_STATUS1",
+			"type": "JSON",
+			"settings": {
+				"url": "https://api.particle.io/v1/devices/3f0036000547343337373738/STATUS_1?access_token=c2d52dd03196d2832a1f04e9b4a98c6acaaa4026",
+				"use_thingproxy": false,
+				"refresh": 5,
+				"method": "GET"
+			}
+		}
+	],
+	"columns": 3
+}

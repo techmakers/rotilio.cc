@@ -9,7 +9,7 @@
 */
 
 #define FIRMWARE_CLASS      "ROTILIO SEED FIRMWARE"
-#define FIRMWARE_VERSION    0.17
+#define FIRMWARE_VERSION    0.20
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
@@ -18,22 +18,23 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 #include "Particle_BaroSensor/Particle_BaroSensor.h"
 
-#define UICONFIGARRAYSIZE 11
-#define UICONFIGVERSION 3
+#define UICONFIGARRAYSIZE 12
+#define UICONFIGVERSION 4
 
 String uiConfig[UICONFIGARRAYSIZE] = {
     // page title
     "[{'t':'head','text':'General purpose application v 1.0'}]",
     // sensors
     "[{'n':'temperature','l':'Temperature 1'},{'n':'exttemp','l':'Temperature 2'}]", // no 't' means, default:text, no 'l' means use 'n' as label
-    "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",
+    "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",    
     "[{'n':'photoresistor','l':'Light'},{'n':'trimmer','l':'Trimmer'}]",
-    //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]",
+    //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]", 
     "[{'n':'button1','t':'led','l':'Button 1'}]",
+    "[{'n':'dimmer','l':'Dimmer'},{'n':'setdimmer','step':5, 'min':0,'max':100,'l':'Set dimmmer','t':'slider'}]", 
     // actions
-
+    
     "[{'n':'relais','t':'led','l':'Relais status'},{'n':'switch','l':'Switch','t':'switch-readonly'}]",
-
+    
     "[{'t':'button','l':'Manual relais on','m':'setrelais:on'},{'t':'button','l':'Manual relais off','m':'setrelais:off'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
     "[{'t':'button','l':'Relais on for 1 second','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
     "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
@@ -42,7 +43,7 @@ String uiConfig[UICONFIGARRAYSIZE] = {
 };
 
 #define LIGHTUPIFDARK        1
-#define LIGHTDOWNIFDARK		 2
+#define LIGHTDOWNIFDARK      2
 
 #define LIGHTMODE            LIGHTDOWNIFDARK
 
@@ -66,7 +67,9 @@ String debugMsg = "" ;
 
 #define LOOP_DELAY      1000.0
 
-
+#define DIMMER_ON       1
+#define DIMMER_OFF      0
+#define DIMMER_FREQ     10000
 
 // variable Inizialization
 double temperature = 99999 ; 
@@ -80,12 +83,13 @@ int button2 = false ;
 int switch0 = false ; 
 int relais = false ;
 int alarm = 0 ;
+int dimmer = 0 ;
 int deltaLight = 0 ;
 
 String status = "{}" ; 
-String status_template = "{\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"deltalight\":<deltalight>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
+String status_template = "{\"dimmer\":<dimmer>,\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"deltalight\":<deltalight>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
 
-String STATUS_0_template = "<ssid>,<rssi>,<temperature>,<exttemp>,<humidity>,<pressure>,<photoresistor>,<trimmer>,<button1>,<button2>,<switch>,<relais>,<alarm>" ;
+String STATUS_0_template = "<ssid>,<rssi>,<temperature>,<exttemp>,<humidity>,<pressure>,<photoresistor>,<trimmer>,<button1>,<button2>,<switch>,<relais>,<alarm>,<dimmer>" ;
 
 
 
@@ -115,6 +119,9 @@ String stats_template = "{\"Temperature Min\":<temperatureMin>,\"Temperature Max
 int l=0;
 int i=0;
 
+long lastMillis = 0 ;
+double timePassed = 0.0 ;
+
 void setup(){
     
     sendDebug(0) ;
@@ -132,8 +139,14 @@ void setup(){
     pinMode(RELAIS_RESET, OUTPUT);     
     
     pinMode(RELAIS_FDB,INPUT_PULLUP);  
-    pinMode(BUTTON_1, INPUT_PULLUP);     
-    pinMode(BUTTON_2, INPUT_PULLUP);   
+    #if DIMMER_ON
+        pinMode(BUTTON_1, OUTPUT);
+        pinMode(BUTTON_2, OUTPUT);  
+    #else 
+        pinMode(BUTTON_1, INPUT_PULLUP);
+        pinMode(BUTTON_2, INPUT_PULLUP);  
+    #endif
+     
     pinMode(SWITCH, INPUT_PULLUP); 
     
     digitalWrite(BUZZER, LOW);
@@ -147,17 +160,19 @@ void setup(){
     Serial.begin(115200);
     Wire.begin();              // si connette col bus i2c
     
+    lastMillis = millis() ;
 }
 
 void loop(){
     
+    
+    
     if (!Particle.connected()) Particle.connect();
-    
-    if (alarm > 0){
-        sound(1000,250);
-        alarm-- ;
-    }
-    
+
+    long newMillis = millis() ;
+    timePassed = newMillis - lastMillis ;
+    lastMillis = newMillis ;
+
     i++ ;
     if (i > DEBUG_INTERVAL_SECS){
         i = 0;
@@ -173,20 +188,23 @@ void loop(){
     trimmer = analogRead(A2) ;
     deltaLight = photoresistor - trimmer ;
     
-    int actualButton1 = digitalRead(BUTTON_1) ;
-    if (actualButton1 == LOW){
-        sound(1000,250) ;
-        button1 = !button1 ;
-        sendVariableChanged("button1",button1 ? "1" : "0");
-    }
-
-    int actualButton2 = digitalRead(BUTTON_2) ;
-    if (actualButton2 == LOW){
-        sound(1000,250) ;
-        button2 = !button2 ;
-        sendVariableChanged("button2",button2 ? "1" : "0");
-    }
-
+    #if DIMMER_ON
+        //analogWrite(D2,map(dimmer,0,100,0,255),DIMMER_FREQ);
+        analogWrite(D2,dimmer,DIMMER_FREQ);
+    #else
+        int actualButton1 = digitalRead(BUTTON_1) ;
+        if (actualButton1 == LOW){
+            sound(1000,250) ;
+            button1 = !button1 ;
+            sendVariableChanged("button1",button1 ? "1" : "0");
+        }
+        int actualButton2 = digitalRead(BUTTON_2) ;
+        if (actualButton2 == LOW){
+            sound(1000,250) ;
+            button2 = !button2 ;
+            sendVariableChanged("button2",button2 ? "1" : "0");
+        }
+    #endif
 
     relais = digitalRead(RELAIS_FDB) ;
     
@@ -207,6 +225,7 @@ void loop(){
     status.replace("<button1>",String(button1));
     status.replace("<button2>",String(button2));
     status.replace("<alarm>",String(alarm));
+    status.replace("<dimmer>",String(dimmer));
     
     
     stats = String(stats_template);
@@ -242,7 +261,7 @@ void loop(){
     if (lightMax < photoresistor) lightMax = photoresistor ;
     
     if (relais == 1){
-        relaisOnMinutesInLastDay = relaisOnMinutesInLastDay + double(LOOP_DELAY/1000.0/60.0) ;
+        relaisOnMinutesInLastDay = relaisOnMinutesInLastDay + double(timePassed/1000.0/60.0) ;
     }
     
     relaisOnAverageMinutesPerDay = (relaisOnAverageMinutesPerDay * relaisOnAveragePerDayCounter + relaisOnMinutesInLastDay) / (relaisOnAveragePerDayCounter + 1.0);
@@ -272,7 +291,7 @@ void loop(){
         }
     }    
     
-    delay(LOOP_DELAY); 
+    //delay(LOOP_DELAY); 
 
 }
 
@@ -285,7 +304,9 @@ int message(String message){
     String command = message.substring(0,colonPos) ;
     String argument = message.substring(colonPos+1) ;
     
-    if (command.equals("setrelais")){
+    if (command.equals("setdimmer")){
+        return setdimmer(argument) ;
+    } else if (command.equals("setrelais")){
         return setrelais(argument) ;
     } else if (command.equals("setalarm")){
         return setalarm(argument) ;
@@ -362,7 +383,16 @@ double humidityRead(void){
 
 int setalarm(String command){
     alarm = command.toInt();
+    for (int i=0;i<alarm;i++){
+        sound(1000,250);
+        delay(1000) ;
+    }
     return alarm ;
+}
+
+int setdimmer(String command){
+    dimmer = command.toInt() ;
+    return dimmer ;
 }
 
 void setRelaisOn(){
