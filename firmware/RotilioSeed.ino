@@ -1,3 +1,9 @@
+// This #include statement was automatically added by the Particle IDE.
+#include <MDNS.h>
+
+// This #include statement was automatically added by the Particle IDE.
+#include <WebServer.h>
+
 /*
     Rotilio.cc firmware base
     carlo@techmakers.io
@@ -5,18 +11,22 @@
 
     © 2016 Techmakers srl
 
-    
+
 */
 
 #define FIRMWARE_CLASS      "ROTILIO SEED FIRMWARE"
-#define FIRMWARE_VERSION    0.20
+#define FIRMWARE_VERSION    0.21
 
 //STARTUP(System.enableFeature(FEATURE_RETAINED_MEMORY));
 
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
+#define AUTO_CONNECT_TO_PARTICLE false ;
 
-#include "Particle_BaroSensor/Particle_BaroSensor.h"
+bool connect_to_particle = AUTO_CONNECT_TO_PARTICLE ;
+
+
+#include <Particle_BaroSensor.h>
 
 #define UICONFIGARRAYSIZE 12
 #define UICONFIGVERSION 4
@@ -26,15 +36,15 @@ String uiConfig[UICONFIGARRAYSIZE] = {
     "[{'t':'head','text':'General purpose application v 1.0'}]",
     // sensors
     "[{'n':'temperature','l':'Temperature 1'},{'n':'exttemp','l':'Temperature 2'}]", // no 't' means, default:text, no 'l' means use 'n' as label
-    "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",    
+    "[{'n':'humidity','l':'Humidity'},{'n':'pressure','l':'Pressure'}]",
     "[{'n':'photoresistor','l':'Light'},{'n':'trimmer','l':'Trimmer'}]",
-    //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]", 
+    //"[{'n':'button1','t':'led','l':'Button 1'},{'n':'button2','t':'led','l':'Button 2'}]",
     "[{'n':'button1','t':'led','l':'Button 1'}]",
-    "[{'n':'dimmer','l':'Dimmer'},{'n':'setdimmer','step':5, 'min':0,'max':100,'l':'Set dimmmer','t':'slider'}]", 
+    "[{'n':'dimmer','l':'Dimmer'},{'n':'setdimmer','step':5, 'min':0,'max':100,'l':'Set dimmmer','t':'slider'}]",
     // actions
-    
+
     "[{'n':'relais','t':'led','l':'Relais status'},{'n':'switch','l':'Switch','t':'switch-readonly'}]",
-    
+
     "[{'t':'button','l':'Manual relais on','m':'setrelais:on'},{'t':'button','l':'Manual relais off','m':'setrelais:off'}]",  // Relais on or off, normally open, button label for open: Warm up, button label for close: Off
     "[{'t':'button','l':'Relais on for 1 second','m':'setrelais:1000'}]",    // Relais pulse on click, for 100 msec, button label: Open door
     "[{'t':'button','l':'2 Beeps','m':'setalarm:2'}]",
@@ -43,13 +53,13 @@ String uiConfig[UICONFIGARRAYSIZE] = {
 };
 
 #define LIGHTUPIFDARK        1
-#define LIGHTDOWNIFDARK      2
+#define LIGHTDOWNIFDARK		 2
 
 #define LIGHTMODE            LIGHTDOWNIFDARK
 
 #define RELAIS_IS_MONO       1
 
-#define DEBUG_INTERVAL_SECS 30
+#define DEBUG_INTERVAL_SECS 60
 String debugMsg = "" ;
 
 #define Si7020_ADDRESS    0x40
@@ -69,10 +79,10 @@ String debugMsg = "" ;
 
 #define DIMMER_ON       1
 #define DIMMER_OFF      0
-#define DIMMER_FREQ     10000
+#define DIMMER_FREQ     20000
 
 // variable Inizialization
-double temperature = 99999 ; 
+double temperature = 99999 ;
 double extTemperature = 99999 ;
 int humidity = 9999 ;
 double pressure = -1 ;
@@ -80,13 +90,13 @@ double photoresistor = -1 ;
 int trimmer = -1 ;
 int button1 = false ;
 int button2 = false ;
-int switch0 = false ; 
+int switch0 = false ;
 int relais = false ;
 int alarm = 0 ;
 int dimmer = 0 ;
 int deltaLight = 0 ;
 
-String status = "{}" ; 
+String status = "{}" ;
 String status_template = "{\"dimmer\":<dimmer>,\"temperature\":<temperature>,\"exttemp\":<exttemp>,\"humidity\":<humidity>,\"pressure\":<pressure>,\"photoresistor\":<photoresistor>,\"trimmer\":<trimmer>,\"deltalight\":<deltalight>,\"button1\":<button1>,\"button2\":<button2>,\"switch\":<switch>,\"relais\":<relais>,\"alarm\":<alarm>}" ;
 
 String STATUS_0_template = "<ssid>,<rssi>,<temperature>,<exttemp>,<humidity>,<pressure>,<photoresistor>,<trimmer>,<button1>,<button2>,<switch>,<relais>,<alarm>,<dimmer>" ;
@@ -122,52 +132,162 @@ int i=0;
 long lastMillis = 0 ;
 double timePassed = 0.0 ;
 
+char myIpString[24];
+String TCPBuffer = "" ;
+
+//TCPServer server = TCPServer(80);
+//TCPClient client;
+
+#define PREFIX ""
+WebServer webserver(PREFIX, 80);
+
+void defaultCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail, bool tail_complete)
+{
+  if (type == WebServer::POST)
+  {
+    server.httpFail();
+    return;
+  }
+
+  //server.httpSuccess(false, "application/json");
+  server.httpSuccess("application/json");
+
+  if (type == WebServer::HEAD)
+    return;
+
+
+    #if PLATFORM_ID == 10 // electron
+        CellularSignal sig = Cellular.RSSI();
+        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(i) + "," + sig.qual + "," + sig.rssi + "," + myIpString ;
+        // dont send debug, we published a variable so the cloud can know the situation
+        // Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
+    #else
+        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(i) + "," +WiFi.SSID() + "," + WiFi.RSSI() + "," + myIpString  ;
+    #endif
+
+  server.print("{\"result\":\"" + debugMsg + "\"}") ;
+}
+
+void jsonCmd(WebServer &server, WebServer::ConnectionType type, char *url_tail, bool tail_complete)
+{
+  if (type == WebServer::POST)
+  {
+    server.httpFail();
+    return;
+  }
+
+  //server.httpSuccess(false, "application/json");
+  server.httpSuccess("application/json");
+
+  if (type == WebServer::HEAD)
+    return;
+
+  server.print("{\"result\":" + status + "}") ;
+}
+
+MDNS mdns;
+bool mdnsSuccess;
+bool mdnsBeginned ;
+
 void setup(){
-    
-    sendDebug(0) ;
-    
+
     BaroSensor.begin();
-      
+
     Particle.variable("status", status) ;
     Particle.variable("stats",stats) ;
     Particle.variable("d", debugMsg) ;
-    
-    Particle.function("message", message);      // see workMessage function     
-    
-    pinMode(BUZZER, OUTPUT);  
-    pinMode(RELAIS_SET, OUTPUT);  
-    pinMode(RELAIS_RESET, OUTPUT);     
-    
-    pinMode(RELAIS_FDB,INPUT_PULLUP);  
+
+    Particle.function("message", message);      // see workMessage function
+
+    pinMode(BUZZER, OUTPUT);
+    pinMode(RELAIS_SET, OUTPUT);
+    pinMode(RELAIS_RESET, OUTPUT);
+
+    pinMode(RELAIS_FDB,INPUT_PULLUP);
     #if DIMMER_ON
         pinMode(BUTTON_1, OUTPUT);
-        pinMode(BUTTON_2, OUTPUT);  
-    #else 
+        pinMode(BUTTON_2, OUTPUT);
+    #else
         pinMode(BUTTON_1, INPUT_PULLUP);
-        pinMode(BUTTON_2, INPUT_PULLUP);  
+        pinMode(BUTTON_2, INPUT_PULLUP);
     #endif
-     
-    pinMode(SWITCH, INPUT_PULLUP); 
-    
+
+    pinMode(SWITCH, INPUT_PULLUP);
+
     digitalWrite(BUZZER, LOW);
     digitalWrite(RELAIS_SET, LOW);
-    digitalWrite(RELAIS_RESET, LOW);  
-    
-    pinMode(D7, OUTPUT); 
-    
+    digitalWrite(RELAIS_RESET, LOW);
+
+    pinMode(D7, OUTPUT);
+
     setRelaisOff();
 
     Serial.begin(115200);
     Wire.begin();              // si connette col bus i2c
-    
+
     lastMillis = millis() ;
+
+
+    if (WiFi.hasCredentials()) WiFi.connect();
+
+      /* start the webserver */
+    if (WiFi.ready()){
+        IPAddress myIp = WiFi.localIP();
+        sprintf(myIpString, "%d.%d.%d.%d", myIp[0], myIp[1], myIp[2], myIp[3]);
+
+        /* setup our default command that will be run when the user accesses
+        * the root page on the server */
+        webserver.setDefaultCommand(&defaultCmd);
+
+        /* run the same command if you try to load /index.html, a common
+        * default page name */
+        webserver.addCommand("status", &jsonCmd);
+
+        webserver.begin();
+    }
+
+    sendDebug(0) ;
+
 }
 
 void loop(){
-    
-    
-    
-    if (!Particle.connected()) Particle.connect();
+
+    if (WiFi.ready()){
+        IPAddress myIp = WiFi.localIP();
+        sprintf(myIpString, "%d.%d.%d.%d", myIp[0], myIp[1], myIp[2], myIp[3]);
+
+        char buff[64];
+        int len = 64;
+
+        /* process incoming connections one at a time forever */
+        webserver.processConnection(buff, &len);
+    }
+
+    if (WiFi.ready() && !mdnsSuccess){
+        mdnsSuccess = mdns.setHostname(System.deviceID());
+    }
+
+    if (WiFi.ready() && mdnsSuccess && !mdnsBeginned){
+        mdnsBeginned = mdns.begin();
+    }
+
+    if (WiFi.ready() && mdnsSuccess && mdnsBeginned){
+        mdns.processQueries();
+    }
+
+    if (connect_to_particle && !Particle.connected()) Particle.connect();
+
+    while (Serial.available()) {
+        char c = Serial.read() ;
+        if (c == 13) {
+            Serial.print(c);
+            message(TCPBuffer);
+            TCPBuffer = "";
+        } else {
+            if (c != 10) TCPBuffer += c ;
+            Serial.print(c);
+        }
+    }
 
     long newMillis = millis() ;
     timePassed = newMillis - lastMillis ;
@@ -179,7 +299,7 @@ void loop(){
         l++ ;
         sendDebug(l) ;
     }
-    
+
     temperature = temperatureRead() + TEMP_ADJUST_OFFSET;
     pressure = BaroSensor.getPressure(OSR_8192) ;
     extTemperature = BaroSensor.getTemperature() + TEMP_ADJUST_OFFSET;
@@ -187,7 +307,7 @@ void loop(){
     photoresistor = analogRead(A1) ;
     trimmer = analogRead(A2) ;
     deltaLight = photoresistor - trimmer ;
-    
+
     #if DIMMER_ON
         //analogWrite(D2,map(dimmer,0,100,0,255),DIMMER_FREQ);
         analogWrite(D2,dimmer,DIMMER_FREQ);
@@ -207,9 +327,9 @@ void loop(){
     #endif
 
     relais = digitalRead(RELAIS_FDB) ;
-    
+
     switch0 = !digitalRead(SWITCH) ;
-    
+
     status = String(status_template) ; // copying ;
 
 
@@ -226,15 +346,15 @@ void loop(){
     status.replace("<button2>",String(button2));
     status.replace("<alarm>",String(alarm));
     status.replace("<dimmer>",String(dimmer));
-    
-    
+
+
     stats = String(stats_template);
-    
+
     if (lastDay != Time.day()){
         lastDay = Time.day() ;
         relaisOnAveragePerDayCounter++ ;
         relaisOnMinutesInLastDay = 0 ;
-        
+
         extTempMin = 9999 ;
         extTempMax = -9999 ;
         temperatureMin = 9999 ;
@@ -246,9 +366,9 @@ void loop(){
         lightMin = 9999 ;
         lightMax = -9999 ;
     }
-    
-   
-    
+
+
+
     if (extTempMin > extTemperature) extTempMin = extTemperature ;
     if (extTempMax < extTemperature) extTempMax = extTemperature ;
     if (temperatureMin > temperature) temperatureMin = temperature ;
@@ -259,13 +379,13 @@ void loop(){
     if (pressureMax < pressure) pressureMax = pressure ;
     if (lightMin > photoresistor) lightMin = photoresistor ;
     if (lightMax < photoresistor) lightMax = photoresistor ;
-    
+
     if (relais == 1){
         relaisOnMinutesInLastDay = relaisOnMinutesInLastDay + double(timePassed/1000.0/60.0) ;
     }
-    
+
     relaisOnAverageMinutesPerDay = (relaisOnAverageMinutesPerDay * relaisOnAveragePerDayCounter + relaisOnMinutesInLastDay) / (relaisOnAveragePerDayCounter + 1.0);
-    
+
     stats.replace("<temperatureMin>",String(temperatureMin));
     stats.replace("<temperatureMax>",String(temperatureMax));
     stats.replace("<extTemperatureMin>",String(extTempMin));
@@ -289,9 +409,9 @@ void loop(){
             if (LIGHTMODE == LIGHTUPIFDARK) setRelaisOff();
             if (LIGHTMODE == LIGHTDOWNIFDARK) setRelaisOn();
         }
-    }    
-    
-    //delay(LOOP_DELAY); 
+    }
+
+    //delay(LOOP_DELAY);
 
 }
 
@@ -300,11 +420,21 @@ int message(String message){
     // ex: setrelais:off
     // ex: setalarm:10
     int colonPos = message.indexOf(":") ;
-    if (colonPos < 0) return -1 ;                 // syntax error not found
+    if (colonPos < 0) {
+        Serial.println("{\"error\":\"Wrong command format please use <command>:<argument> format.\"}") ;
+        return -1 ;                 // syntax error not found
+    }
     String command = message.substring(0,colonPos) ;
     String argument = message.substring(colonPos+1) ;
-    
-    if (command.equals("setdimmer")){
+
+
+    if (command.equals("d")){
+        Serial.println("{\"debugMsg\":\""+debugMsg+"\"}");
+        return 1;
+    } else if (command.equals("s")){
+        Serial.println("{\"result\":"+status+"}");
+        return 1;
+    } else if (command.equals("setdimmer")){
         return setdimmer(argument) ;
     } else if (command.equals("setrelais")){
         return setrelais(argument) ;
@@ -315,9 +445,11 @@ int message(String message){
     } else if (command.equalsIgnoreCase("getuiconfig")){
         return sendUIConfig();
     } else if (command.equalsIgnoreCase("reset")){
+        Serial.println("{\"result\":\"System reset !!!\"}") ;
         System.reset();
         return 0;
     } else {
+        Serial.println("{\"error\":\"Wrong command '"+ command +  "'\"}") ;
         return -2 ;                         // command not found
     }
 }
@@ -332,12 +464,12 @@ int setD7(String argument){
     }
 }
 
-void sound(int cicles,int period){ // emette il suono .. 
+void sound(int cicles,int period){ // emette il suono ..
     for(int n=0;n<cicles;n++) {
         digitalWrite(BUZZER, HIGH);
         delayMicroseconds(period);
         digitalWrite(BUZZER, LOW);
-        delayMicroseconds(period);           
+        delayMicroseconds(period);
     }
 }
 
@@ -353,7 +485,7 @@ double temperatureRead(void){
             unsigned char msb = Wire.read();
             unsigned char lsb = Wire.read();
             unsigned char chk = Wire.read();            // non utilizzato
-        
+
             int sot=(((int) msb<<8) + (int) lsb);       // crea variabile "raw data"
             accumulo=accumulo+sot;                      // la accumula per poi farne la media
         }
@@ -373,12 +505,12 @@ double humidityRead(void){
             unsigned char msb = Wire.read();
             unsigned char lsb = Wire.read();
             unsigned char chk = Wire.read();            // non utilizzato
-        
+
             int sot=(((int) msb<<8) + (int) lsb);       // crea variabile "raw data"
             accumulo=accumulo+sot;                      // la accumula per poi farne la media
         }
-    
-    return ((125*(accumulo/SAMPLE_NUMBER))/65536)-6;   // calcola la media e converte la lettura grezza in umidita' (% relativa)     
+
+    return ((125*(accumulo/SAMPLE_NUMBER))/65536)-6;   // calcola la media e converte la lettura grezza in umidita' (% relativa)
 }
 
 int setalarm(String command){
@@ -396,11 +528,10 @@ int setdimmer(String command){
 }
 
 void setRelaisOn(){
-
     digitalWrite(RELAIS_SET, HIGH);
-    
+
     if (RELAIS_IS_MONO) return ;
-    
+
     delay(100) ;
     digitalWrite(RELAIS_SET, LOW);
 }
@@ -443,13 +574,14 @@ int sendUIConfig(){
 void sendDebug(int count){
     #if PLATFORM_ID == 10 // electron
         CellularSignal sig = Cellular.RSSI();
-        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," + sig.qual + "," + sig.rssi ;
+        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," + sig.qual + "," + sig.rssi + "," + myIpString ;
         // dont send debug, we published a variable so the cloud can know the situation
         // Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
     #else
-        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() ;
+        debugMsg = FIRMWARE_CLASS + String(",V ") + String(FIRMWARE_VERSION) + "," + String(count) + "," +WiFi.SSID() + "," + WiFi.RSSI() + "," + myIpString  ;
         if (Particle.connected()) Particle.publish("debugmsg", debugMsg, 60, PRIVATE);
     #endif
+    //Serial.println(debugMsg) ;
 }
 
 void sendVariableChanged(String name, String value){

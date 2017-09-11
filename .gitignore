@@ -1,3 +1,4 @@
+.DS_Store
 nodejs/.idea
 nodejs/node_modules
 .idea/encodings.xml
